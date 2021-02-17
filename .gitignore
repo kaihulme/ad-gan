@@ -1,3 +1,28 @@
+# Images - standard & medical
+images/
+*.jpg
+*.JPG
+*.jpeg
+*.JPEG
+*.png
+*.PNG
+*.dicom
+*.DICOM
+*.nifti
+*.NIFTI
+*.NIfTI
+
+# Data
+data/
+*.csv
+*.CSV
+*.json
+*.JSON
+
+# VSCode
+.vscode/
+vscode.*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
