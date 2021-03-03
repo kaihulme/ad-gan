@@ -13,25 +13,61 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.metrics import BinaryCrossentropy, Accuracy, AUC
 
 
+# def build_generator(z_dim):
+#     model = Sequential()
+#     model.add(Dense(256 * 7 * 7, input_dim=z_dim))
+#     model.add(Reshape((7, 7, 256)))
+#     model.add(Conv2DTranspose(128, kernel_size=3, strides=2, padding='same'))
+#     model.add(BatchNormalization())
+#     model.add(LeakyReLU(alpha=0.01))
+#     model.add(Conv2DTranspose(64, kernel_size=3, strides=1, padding='same'))
+#     model.add(BatchNormalization())
+#     model.add(LeakyReLU(alpha=0.01))
+#     model.add(Conv2DTranspose(1, kernel_size=3, strides=2, padding='same'))
+#     model.add(Activation('tanh'))
+#     return model
+
+# def build_discriminator(img_shape):
+#     model = Sequential()
+    # model.add(Conv2D(32, kernel_size=3, strides=2, input_shape=img_shape, padding='same'))
+    # model.add(LeakyReLU(alpha=0.01))
+    # model.add(Conv2D(64, kernel_size=3, strides=2, input_shape=img_shape, padding='same'))
+    # model.add(BatchNormalization())
+    # model.add(LeakyReLU(alpha=0.01))
+    # model.add(Conv2D(128, kernel_size=3, strides=2, input_shape=img_shape, padding='same'))
+    # model.add(BatchNormalization())
+    # model.add(LeakyReLU(alpha=0.01))
+    # model.add(Flatten())
+    # model.add(Dense(1, activation='sigmoid'))
+    # return model
+
+
 def build_generator(z_dim):
+
     model = Sequential()
+
     model.add(Dense(256 * 7 * 7, input_dim=z_dim))
     model.add(Reshape((7, 7, 256)))
+    
     model.add(Conv2DTranspose(128, kernel_size=3, strides=2, padding='same'))
     model.add(BatchNormalization())
     model.add(LeakyReLU(alpha=0.01))
+    
     model.add(Conv2DTranspose(64, kernel_size=3, strides=1, padding='same'))
     model.add(BatchNormalization())
     model.add(LeakyReLU(alpha=0.01))
+    
     model.add(Conv2DTranspose(1, kernel_size=3, strides=2, padding='same'))
+    
     model.add(Activation('tanh'))
+    
     return model
-
 
 def build_discriminator(img_shape):
     model = Sequential()
     model.add(Conv2D(32, kernel_size=3, strides=2, input_shape=img_shape, padding='same'))
     model.add(LeakyReLU(alpha=0.01))
+
     model.add(Conv2D(64, kernel_size=3, strides=2, input_shape=img_shape, padding='same'))
     model.add(BatchNormalization())
     model.add(LeakyReLU(alpha=0.01))
@@ -59,30 +95,21 @@ def train_dcgan(iterations, batch_size, sample_interval):
     for iteration in tqdm(range(iterations)):
         idx = np.random.randint(0, X_train.shape[0], batch_size)
         imgs = X_train[idx]
-        print(f"{iteration}: here B")
         z = np.random.normal(0, 1, (batch_size, 100))
         gen_imgs = generator.predict(z)
-        print(f"{iteration}: here C")
         d_loss_real = discriminator.train_on_batch(imgs, real)
         d_loss_fake = discriminator.train_on_batch(gen_imgs, fake)
         d_loss, accuracy = 0.5 * np.add(d_loss_real, d_loss_fake)
-        print(f"{iteration}: here D")
         z = np.random.normal(0, 1, (batch_size, 100))
         gen_imgs = generator.predict(z)
-        print(f"{iteration}: here E")
         g_loss = gan.train_on_batch(z, real)
-        print(f"{iteration}: here F")
         if (iteration + 1) % sample_interval == 0:
-            print(f"{iteration}: here AA")
             losses.append((d_loss, g_loss))
             accuracies.append(100.0 * accuracy)
             iteration_checkpoints.append(iteration + 1)
             print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" %
                   (iteration + 1, d_loss, 100.0 * accuracy, g_loss))
-            print(f"{iteration}: here BB")
             sample_images(generator)
-            print(f"{iteration}: here CC")
-        print(f"{iteration}: END")
 
 
 def sample_images(generator, image_grid_rows=4, image_grid_columns=4):
