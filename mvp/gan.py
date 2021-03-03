@@ -51,32 +51,26 @@ class GAN(Model):
                 3. classify generated images with discriminator.
                 4. calculate generator loss and update generator weights.
         """
-        # generate images from random latent space
         batch_size = tf.shape(X)[0]
         z0 = tf.random.normal(shape=(batch_size, self.z_dim))
         X_gen = self.generator(z0)
-        X_all = tf.concat([X_gen, X], axis=0)
-        # generate labels and add instance noise
+        X_all = tf.concat([X_gen, X], axis=0)        
         y_all = tf.concat([tf.ones((batch_size, 1)), tf.zeros((batch_size, 1))], axis=0)
         y_all += 0.05 * tf.random.uniform(tf.shape(y_all))
-        # predict with discriminator and calculate prediction loss
         with tf.GradientTape() as tape:
             preds = self.discriminator(X_all)
-            dis_loss = self.loss(y_all, preds)
-        # backpropagate loss in discriminator
+            dis_loss = self.loss(y_all, preds)        
         grads = tape.gradient(dis_loss, self.discriminator.trainable_weights)
         self.dis_opt.apply_gradients(zip(grads, self.discriminator.trainable_weights))
-        # generate new random latent space
+        
         z1 = tf.random.normal(shape=(batch_size, self.z_dim))
         y_gen = tf.zeros((batch_size, 1))
-        # predict with discriminator and calculate generator loss
         with tf.GradientTape() as tape:
             preds = self.discriminator(self.generator(z1))
-            gen_loss = self.loss(y_gen, preds)
-        # backpropagate loss in generator
+            gen_loss = self.loss(y_gen, preds)        
         grads = tape.gradient(gen_loss, self.generator.trainable_weights)
         self.gen_opt.apply_gradients(zip(grads, self.generator.trainable_weights))
-        # update loss metrics
+        
         self.dis_loss.update_state(dis_loss)
         self.gen_loss.update_state(gen_loss)
         return {"dis_los": self.dis_loss.result(), "gen_loss": self.gen_loss.result()}
@@ -115,25 +109,27 @@ class GAN(Model):
 
 
 class SampleGAN(Callback):
-    def __init__(self, z_dim, n=10):
+    def __init__(self, z_dim, n=10, sample_every=1):
         self.n = n
+        self.sample_every = sample_every
         self.z_dim = z_dim
         self.out_dir = self.get_out_dir()
         if not os.path.isdir(self.out_dir):
             os.makedirs(self.out_dir)
 
     def on_epoch_end(self, epoch, logs=None):
-        z = tf.random.normal(shape=(self.n, self.z_dim))
-        X_gen = self.model.generator(z)
-        X_gen *= 255
-        X_gen.numpy()
-        epoch_dir = self.get_epoch_dir(epoch)
-        if not os.path.isdir(epoch_dir):
-            os.makedirs(epoch_dir)
-        for i, gen_img in enumerate(X_gen):
-            filename = self.get_out_path(epoch_dir, i)
-            img = array_to_img(gen_img)
-            img.save(filename)
+        if epoch % self.sample_every == 0:
+            z = tf.random.normal(shape=(self.n, self.z_dim))
+            X_gen = self.model.generator(z)
+            X_gen *= 255
+            X_gen.numpy()
+            epoch_dir = self.get_epoch_dir(epoch)
+            if not os.path.isdir(epoch_dir):
+                os.makedirs(epoch_dir)
+            for i, gen_img in enumerate(X_gen):
+                filename = self.get_out_path(epoch_dir, i)
+                img = array_to_img(gen_img)
+                img.save(filename)
 
     def get_out_dir(self):
         out_dir = os.path.join(os.getcwd(), "out/training_samples")
@@ -141,7 +137,7 @@ class SampleGAN(Callback):
         return os.path.join(out_dir, cur_time)
 
     def get_epoch_dir(self, epoch):
-        epoch_dir = "epoch_{0}".format(str(epoch))
+        epoch_dir = "epoch_{0}".format(str(epoch + 1))
         return os.path.join(self.out_dir, epoch_dir)
 
     def get_out_path(self, epoch_dir, i):
@@ -152,7 +148,7 @@ class SampleGAN(Callback):
 rows, cols, channels = (28, 28, 1)
 img_shape = (rows, cols, channels)
 batch_size = 32
-z_dim = 128
+z_dim = 100
 
 X_train = image_dataset_from_directory(
     "data/train", 
@@ -164,11 +160,11 @@ X_train = image_dataset_from_directory(
 
 X_train = X_train.map(lambda x: x / 255.0)
 
-opt = Adam(learning_rate=0.001)
+opt = Adam(learning_rate=0.0001)
 loss = BinaryCrossentropy()
-callbacks = [SampleGAN(z_dim)]
+callbacks = [SampleGAN(z_dim, sample_every=10)]
 
 gan = GAN(img_shape=img_shape, batch_size=batch_size, z_dim=z_dim)
 gan.compile(gen_opt=opt, dis_opt=opt, loss=loss)
 
-gan.fit(X_train, epochs=10, callbacks=callbacks)
+gan.fit(X_train, epochs=100, callbacks=callbacks)
