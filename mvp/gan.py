@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras import Model
+from tensorflow.keras import callbacks
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Reshape, Flatten, Conv2D, Conv2DTranspose, BatchNormalization, MaxPool2D, Activation, LeakyReLU
 from tensorflow.keras.losses import BinaryCrossentropy
@@ -15,13 +16,70 @@ from tensorflow.keras.preprocessing.image import array_to_img
 
 
 class GAN(Model):
-
-    def __init__(self, img_shape, z_dim):
+    def __init__(self, img_shape, batch_size=32, z_dim=128, show_summary=False):
         super(GAN, self).__init__()
         self.img_shape = img_shape
+        self.batch_size = batch_size
         self.z_dim = z_dim
+        self.show_summary = show_summary
         self.generator = self.build_generator()
         self.discriminator = self.build_discriminator()
+
+    def compile(self, gen_opt, dis_opt, loss):
+        super(GAN, self).compile()
+        self.gen_opt = gen_opt
+        self.dis_opt = dis_opt
+        self.loss = loss
+        self.gen_loss = Mean(name="gen_loss")
+        self.dis_loss = Mean(name="dis_los")
+
+    def train_step(self, X):
+        """
+        Goal: 
+            Train GAN discriminator and generator networks on image batch.
+        Args: 
+            X: training image batch.
+        Steps:
+            a) Train discriminator:
+                1. generate batch size random latent spaces.
+                2. input latent spaces to generator to generate images.
+                3. classify batch X and generated images with discriminator.
+                4. calculate discriminator loss and update discriminator weights.
+            b) Train generator:
+                1. generate batch size latent spaces.
+                2. input latent spaces to generator to generate images.
+                3. classify generated images with discriminator.
+                4. calculate generator loss and update generator weights.
+        """
+        # generate images from random latent space
+        batch_size = tf.shape(X)[0]
+        z0 = tf.random.normal(shape=(batch_size, self.z_dim))
+        X_gen = self.generator(z0)
+        X_all = tf.concat([X_gen, X], axis=0)
+        # generate labels and add instance noise
+        y_all = tf.concat([tf.ones((batch_size, 1)), tf.zeros((batch_size, 1))], axis=0)
+        y_all += 0.05 * tf.random.uniform(tf.shape(y_all))
+        # predict with discriminator and calculate prediction loss
+        with tf.GradientTape() as tape:
+            preds = self.discriminator(X_all)
+            dis_loss = self.loss(y_all, preds)
+        # backpropagate loss in discriminator
+        grads = tape.gradient(dis_loss, self.discriminator.trainable_weights)
+        self.dis_opt.apply_gradients(zip(grads, self.discriminator.trainable_weights))
+        # generate new random latent space
+        z1 = tf.random.normal(shape=(batch_size, self.z_dim))
+        y_gen = tf.zeros((batch_size, 1))
+        # predict with discriminator and calculate generator loss
+        with tf.GradientTape() as tape:
+            preds = self.discriminator(self.generator(z1))
+            gen_loss = self.loss(y_gen, preds)
+        # backpropagate loss in generator
+        grads = tape.gradient(gen_loss, self.generator.trainable_weights)
+        self.gen_opt.apply_gradients(zip(grads, self.generator.trainable_weights))
+        # update loss metrics
+        self.dis_loss.update_state(dis_loss)
+        self.gen_loss.update_state(gen_loss)
+        return {"dis_los": self.dis_loss.result(), "gen_loss": self.gen_loss.result()}
 
     def build_generator(self):
         model = Sequential(name="generator")
@@ -35,7 +93,8 @@ class GAN(Model):
         model.add(LeakyReLU(alpha=0.01))
         model.add(Conv2DTranspose(1, kernel_size=3, strides=2, padding='same'))
         model.add(Activation('tanh'))
-        model.summary()
+        if self.show_summary:
+            model.summary()
         return model
 
     def build_discriminator(self):
@@ -50,64 +109,12 @@ class GAN(Model):
         model.add(LeakyReLU(alpha=0.01))
         model.add(Flatten())
         model.add(Dense(1, activation='sigmoid'))
-        model.summary()
+        if self.show_summary:
+            model.summary()
         return model
-
-    def compile(self, generator_opt, discriminator_opt, loss_func):
-        super(GAN, self).compile()
-        self.generator_opt = generator_opt
-        self.discriminator_opt = discriminator_opt
-        self.loss_func = loss_func
-        self.generator_loss_func = Mean(name="generator_loss")
-        self.discriminator_loss_func = Mean(name="discriminator_loss")
-
-    def train_step(self, real_images):
-
-        # generate random latent space for generator
-        batch_size = tf.shape(real_images)[0]
-        random_latent_vectors = tf.random.normal(shape=(batch_size, self.z_dim))
-
-        # generate images from latent space
-        generated_images = self.generator(random_latent_vectors)
-
-        # combine generated images with real images
-        combined_images = tf.concat([generated_images, real_images], axis=0)
-
-        # create labels for generated and real images and add random noise
-        labels = tf.concat([tf.ones((batch_size, 1)), tf.zeros((batch_size, 1))], axis=0)
-        labels += 0.05 * tf.random.uniform(tf.shape(labels))
-
-        # get discriminator loss with gradient tape 
-        with tf.GradientTape() as tape:
-            predictions = self.discriminator(combined_images)
-            d_loss = self.loss_func(labels, predictions)
-
-        # apply gradients to discriminator
-        grads = tape.gradient(d_loss, self.discriminator.trainable_weights)
-        self.discriminator_opt.apply_gradients(zip(grads, self.discriminator.trainable_weights))
-
-        # generate random latent space for generator and labels
-        random_latent_vectors = tf.random.normal(shape=(batch_size, self.z_dim))
-        misleading_labels = tf.zeros((batch_size, 1))
-
-        # get generator loss with gradient tape
-        with tf.GradientTape() as tape:
-            predictions = self.discriminator(self.generator(random_latent_vectors))
-            g_loss = self.loss_func(misleading_labels, predictions)
-
-        # apply gradients to generator
-        grads = tape.gradient(g_loss, self.generator.trainable_weights)
-        self.generator_opt.apply_gradients(zip(grads, self.generator.trainable_weights))
-
-        # update loss metrics
-        self.discriminator_loss_func.update_state(d_loss)
-        self.generator_loss_func.update_state(g_loss)
-        return {"discriminator_loss": self.discriminator_loss_func.result(),
-                "generator_loss": self.generator_loss_func.result()}
 
 
 class SampleGAN(Callback):
-
     def __init__(self, z_dim, n=10):
         self.n = n
         self.z_dim = z_dim
@@ -116,21 +123,21 @@ class SampleGAN(Callback):
             os.makedirs(self.out_dir)
 
     def on_epoch_end(self, epoch, logs=None):
-        random_latent_vectors = tf.random.normal(shape=(self.n, self.z_dim))
-        generated_images = self.model.generator(random_latent_vectors)
-        generated_images *= 255
-        generated_images.numpy()
+        z = tf.random.normal(shape=(self.n, self.z_dim))
+        X_gen = self.model.generator(z)
+        X_gen *= 255
+        X_gen.numpy()
         epoch_dir = self.get_epoch_dir(epoch)
         if not os.path.isdir(epoch_dir):
             os.makedirs(epoch_dir)
-        for i, gen_img in enumerate(generated_images):
+        for i, gen_img in enumerate(X_gen):
             filename = self.get_out_path(epoch_dir, i)
             img = array_to_img(gen_img)
             img.save(filename)
 
     def get_out_dir(self):
-        out_dir = os.path.join(os.getcwd(), "out")
-        cur_time = time.strftime("gan_training_%y-%m-%d_%H:%M:%S")
+        out_dir = os.path.join(os.getcwd(), "out/training_samples")
+        cur_time = time.strftime("%y-%m-%d_%H:%M:%S")
         return os.path.join(out_dir, cur_time)
 
     def get_epoch_dir(self, epoch):
@@ -138,28 +145,30 @@ class SampleGAN(Callback):
         return os.path.join(self.out_dir, epoch_dir)
 
     def get_out_path(self, epoch_dir, i):
-        filename = "gen_img_{0}.jpg".format(str(i))
+        filename = "sample_{0}.jpg".format(str(i))
         return os.path.join(epoch_dir, filename)
 
 
 rows, cols, channels = (28, 28, 1)
 img_shape = (rows, cols, channels)
 batch_size = 32
+z_dim = 128
 
-dataset = image_dataset_from_directory("data/train", 
-                                       label_mode=None, 
-                                       image_size=(rows, cols), 
-                                       color_mode="grayscale",
-                                       batch_size=batch_size)
+X_train = image_dataset_from_directory(
+    "data/train", 
+    label_mode=None, 
+    image_size=(rows, cols), 
+    color_mode="grayscale",
+    batch_size=batch_size
+)
 
-dataset = dataset.map(lambda x: x / 255.0)
+X_train = X_train.map(lambda x: x / 255.0)
 
-gan = GAN(img_shape=img_shape, z_dim=100)
+opt = Adam(learning_rate=0.001)
+loss = BinaryCrossentropy()
+callbacks = [SampleGAN(z_dim)]
 
-gan.compile(generator_opt=Adam(learning_rate=0.0001), 
-            discriminator_opt=Adam(learning_rate=0.0001),
-            loss_func=BinaryCrossentropy())
+gan = GAN(img_shape=img_shape, batch_size=batch_size, z_dim=z_dim)
+gan.compile(gen_opt=opt, dis_opt=opt, loss=loss)
 
-gan.fit(dataset, 
-        epochs=10, 
-        callbacks=[SampleGAN(gan.z_dim)])
+gan.fit(X_train, epochs=10, callbacks=callbacks)
