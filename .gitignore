@@ -1,5 +1,5 @@
 # Images - standard & medical
-images/
+*/images/
 *.jpg
 *.JPG
 *.jpeg
@@ -13,15 +13,14 @@ images/
 *.NIfTI
 
 # Data
-data/
+*/data/
 *.csv
 *.CSV
 *.json
 *.JSON
 
-# VSCode
-.vscode/
-vscode.*
+# Output
+*/out/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
