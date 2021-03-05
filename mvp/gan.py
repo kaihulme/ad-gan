@@ -14,6 +14,9 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 from tensorflow.keras.preprocessing.image import array_to_img
 
+physical_devices = tf.config.list_physical_devices('GPU') 
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
 
 class GAN(Model):
     def __init__(self, img_shape, batch_size=32, z_dim=128, show_summary=False):
@@ -148,7 +151,7 @@ class SampleGAN(Callback):
 rows, cols, channels = (28, 28, 1)
 img_shape = (rows, cols, channels)
 batch_size = 32
-z_dim = 100
+z_dim = 128
 
 X_train = image_dataset_from_directory(
     "data/train", 
@@ -167,4 +170,5 @@ callbacks = [SampleGAN(z_dim, sample_every=10)]
 gan = GAN(img_shape=img_shape, batch_size=batch_size, z_dim=z_dim)
 gan.compile(gen_opt=opt, dis_opt=opt, loss=loss)
 
-gan.fit(X_train, epochs=100, callbacks=callbacks)
+with tf.device('/device:GPU:0'):
+    gan.fit(X_train, epochs=100, callbacks=callbacks)
