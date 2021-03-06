@@ -12,13 +12,6 @@
 *.NIFTI
 *.NIfTI
 
-# Data
-*/data/
-*.csv
-*.CSV
-*.json
-*.JSON
-
 # Output
 */out/
 

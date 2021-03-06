@@ -1,5 +1,5 @@
 FROM "tensorflow/tensorflow:latest-gpu"
-
+FROM "tensorflow/tensorflow:latest-gpu"
 ENV DEBIAN_FRONTEND=noninteractive
 
 #ARG USERNAME=$(id -u):$(id -g)
@@ -11,7 +11,9 @@ RUN \
     apt-get update \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
     && apt-get -y install git procps lsb-release \
-    && pip --disable-pip-version-check --no-cache-dir install autopep8 mypy pylint \
+    # && pip --disable-pip-version-check --no-cache-dir install autopep8 mypy pylint \
+    && pip install --upgrade pip \
+    && pip install scikit-learn numpy pandas matplotlib seaborn plotly \
     && groupadd --gid $USER_GID $USERNAME \
     && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
     && apt-get install -y sudo \
