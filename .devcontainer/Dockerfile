@@ -22,3 +22,6 @@ RUN \
     && rm -rf /var/lib/apt/lists/*
 
 ENV DEBIAN_FRONTEND=
+
+RUN \
+    sudo echo "PROMPT_DIRTRIM=1" >> ~/.bashrc

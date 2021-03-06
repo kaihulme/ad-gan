@@ -14,9 +14,14 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 from tensorflow.keras.preprocessing.image import array_to_img
 
+# from tensorflow.compat.v1 import ConfigProto
+# from tensorflow.compat.v1 import InteractiveSession
+# config = ConfigProto()
+# config.gpu_options.allow_growth = True
+# session = InteractiveSession(config=config)
+
 physical_devices = tf.config.list_physical_devices('GPU') 
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
-
 
 class GAN(Model):
     def __init__(self, img_shape, batch_size=32, z_dim=128, show_summary=False):
@@ -56,8 +61,8 @@ class GAN(Model):
         """
         batch_size = tf.shape(X)[0]
         z0 = tf.random.normal(shape=(batch_size, self.z_dim))
-        X_gen = self.generator(z0)
-        X_all = tf.concat([X_gen, X], axis=0)        
+        X_gen = self.generator(z0)    
+        X_all = tf.concat([X_gen, X], axis=0)
         y_all = tf.concat([tf.ones((batch_size, 1)), tf.zeros((batch_size, 1))], axis=0)
         y_all += 0.05 * tf.random.uniform(tf.shape(y_all))
         with tf.GradientTape() as tape:
@@ -150,7 +155,7 @@ class SampleGAN(Callback):
 
 rows, cols, channels = (28, 28, 1)
 img_shape = (rows, cols, channels)
-batch_size = 32
+batch_size = 16
 z_dim = 128
 
 X_train = image_dataset_from_directory(
@@ -170,5 +175,5 @@ callbacks = [SampleGAN(z_dim, sample_every=10)]
 gan = GAN(img_shape=img_shape, batch_size=batch_size, z_dim=z_dim)
 gan.compile(gen_opt=opt, dis_opt=opt, loss=loss)
 
-with tf.device('/device:GPU:0'):
-    gan.fit(X_train, epochs=100, callbacks=callbacks)
+# with tf.device('/device:GPU:0'):
+gan.fit(X_train, epochs=100, callbacks=callbacks)
