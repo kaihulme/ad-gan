@@ -1,27 +1,20 @@
 import os
+from posix import listdir
 import time
-import numpy as np
 import tensorflow as tf
-
 from tensorflow.keras import Model
 from tensorflow.keras import callbacks
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Reshape, Flatten, Conv2D, Conv2DTranspose, BatchNormalization, MaxPool2D, Activation, LeakyReLU
+from tensorflow.keras.layers import Dense, Reshape, Flatten, Conv2D, Conv2DTranspose, BatchNormalization, Activation, LeakyReLU
 from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras.metrics import Mean
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 from tensorflow.keras.preprocessing.image import array_to_img
-
-# from tensorflow.compat.v1 import ConfigProto
-# from tensorflow.compat.v1 import InteractiveSession
-# config = ConfigProto()
-# config.gpu_options.allow_growth = True
-# session = InteractiveSession(config=config)
-
-physical_devices = tf.config.list_physical_devices('GPU') 
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
+ 
+gpu = tf.config.experimental.list_physical_devices('GPU')[0]
+tf.config.experimental.set_memory_growth(gpu, True)
 
 class GAN(Model):
     def __init__(self, img_shape, batch_size=32, z_dim=128, show_summary=False):
@@ -116,7 +109,7 @@ class GAN(Model):
         return model
 
 
-class SampleGAN(Callback):
+class SampleGenerator(Callback):
     def __init__(self, z_dim, n=10, sample_every=1):
         self.n = n
         self.sample_every = sample_every
@@ -126,12 +119,12 @@ class SampleGAN(Callback):
             os.makedirs(self.out_dir)
 
     def on_epoch_end(self, epoch, logs=None):
-        if epoch % self.sample_every == 0:
+        if (epoch + 1) % self.sample_every == 0:
             z = tf.random.normal(shape=(self.n, self.z_dim))
             X_gen = self.model.generator(z)
             X_gen *= 255
             X_gen.numpy()
-            epoch_dir = self.get_epoch_dir(epoch)
+            epoch_dir = self.get_epoch_dir(epoch + 1)
             if not os.path.isdir(epoch_dir):
                 os.makedirs(epoch_dir)
             for i, gen_img in enumerate(X_gen):
@@ -145,7 +138,7 @@ class SampleGAN(Callback):
         return os.path.join(out_dir, cur_time)
 
     def get_epoch_dir(self, epoch):
-        epoch_dir = "epoch_{0}".format(str(epoch + 1))
+        epoch_dir = "epoch_{0}".format(str(epoch))
         return os.path.join(self.out_dir, epoch_dir)
 
     def get_out_path(self, epoch_dir, i):
@@ -153,27 +146,50 @@ class SampleGAN(Callback):
         return os.path.join(epoch_dir, filename)
 
 
+def get_dataset(data_dir, rows, cols, batch_size):
+    data = image_dataset_from_directory(
+        data_dir, 
+        label_mode=None, 
+        image_size=(rows, cols), 
+        color_mode="grayscale",
+        batch_size=batch_size,
+    )
+    return data.map(lambda x: x / 255.0)
+
+def get_data_length(data_dir):
+    class_dirs = [os.listdir(os.path.join(data_dir, class_dir)) for class_dir in os.listdir(data_dir)]
+    data_length = 0
+    for class_dir in class_dirs:
+        data_length += len(class_dir)
+    return data_length
+
+
 rows, cols, channels = (28, 28, 1)
 img_shape = (rows, cols, channels)
-batch_size = 16
 z_dim = 128
 
-X_train = image_dataset_from_directory(
-    "data/train", 
-    label_mode=None, 
-    image_size=(rows, cols), 
-    color_mode="grayscale",
-    batch_size=batch_size
-)
-
-X_train = X_train.map(lambda x: x / 255.0)
-
+batch_size = 32
 opt = Adam(learning_rate=0.0001)
 loss = BinaryCrossentropy()
-callbacks = [SampleGAN(z_dim, sample_every=10)]
+callbacks = [SampleGenerator(z_dim, sample_every=10)]
+
+data_dir = "data/train"
+data = get_dataset(data_dir, rows, cols, batch_size)
 
 gan = GAN(img_shape=img_shape, batch_size=batch_size, z_dim=z_dim)
 gan.compile(gen_opt=opt, dis_opt=opt, loss=loss)
 
-# with tf.device('/device:GPU:0'):
-gan.fit(X_train, epochs=100, callbacks=callbacks)
+epochs = 100
+# data_length = get_data_length(data_dir)
+# steps_per_epoch = data_length // batch_size
+workers=4
+max_queue_size=10
+use_multiprocessing=True
+
+gan.fit(data,
+        epochs=epochs,
+        # steps_per_epoch=steps_per_epoch,
+        workers=workers,
+        # max_queue_size=max_queue_size,
+        use_multiprocessing=use_multiprocessing,
+        callbacks=callbacks)

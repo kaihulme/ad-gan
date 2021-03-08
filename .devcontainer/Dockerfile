@@ -1,5 +1,4 @@
 FROM "tensorflow/tensorflow:latest-gpu"
-FROM "tensorflow/tensorflow:latest-gpu"
 ENV DEBIAN_FRONTEND=noninteractive
 
 #ARG USERNAME=$(id -u):$(id -g)
@@ -24,6 +23,3 @@ RUN \
     && rm -rf /var/lib/apt/lists/*
 
 ENV DEBIAN_FRONTEND=
-
-RUN \
-    sudo echo "PROMPT_DIRTRIM=1" >> ~/.bashrc
