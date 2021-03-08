@@ -1,5 +1,4 @@
 import os
-from posix import listdir
 import time
 import tensorflow as tf
 from tensorflow.keras import Model
