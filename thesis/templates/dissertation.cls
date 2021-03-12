@@ -76,7 +76,7 @@
 
 % configure hyperref
 
-\hypersetup{colorlinks=true,bookmarks=false,urlcolor=red}
+%\hypersetup{colorlinks=true,bookmarks=false,urlcolor=red}
 
 % configure algorithm2e
 

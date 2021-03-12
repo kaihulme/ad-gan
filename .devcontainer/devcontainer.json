@@ -35,6 +35,7 @@
 		"eamodio.gitlens",
 		"magicstack.magicpython",
 		"ziyasal.vscode-open-in-github",
-		"visualstudioexptteam.vscodeintellicode"
+		"visualstudioexptteam.vscodeintellicode",
+		"james-yu.latex-workshop"
 	]
 }

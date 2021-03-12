@@ -10,6 +10,9 @@ RUN \
     apt-get update \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
     && apt-get -y install git procps lsb-release \
+
+    && apt-get -y install texlive \
+    
     # && pip --disable-pip-version-check --no-cache-dir install autopep8 mypy pylint \
     && pip install --upgrade pip \
     && pip install scikit-learn numpy pandas matplotlib seaborn plotly \
