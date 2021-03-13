@@ -5,6 +5,7 @@
 		//"-u", "$(id -u):$(id -g)"
 		"-u", "docker",
 		"-h", "tf-gpu",
+		"-v", "/mnt/HDD/Data:/Data/",
 		"--gpus", "all",
 		"-it",
 	],

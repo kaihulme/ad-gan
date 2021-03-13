@@ -20,8 +20,7 @@ def get_dataset(data_dir, rows, cols, batch_size, label_mode=None, color_mode="g
     )
     if label_mode:
         return data.map(normalise_dataset)
-    else:
-        return data.map(lambda x: x / 255.0)
+    return data.map(lambda x: x / 255.0)
 
 
 def get_data_length(data_dir):
