@@ -26,3 +26,4 @@ RUN \
     && rm -rf /var/lib/apt/lists/*
 
 ENV DEBIAN_FRONTEND=
+
