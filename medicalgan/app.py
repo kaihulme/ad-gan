@@ -1,6 +1,7 @@
 import sys
 import medicalgan.releases.mnist.mnist_gan as mnist_gan
 import medicalgan.releases.fmri_tumour.fmri_tumour_cnn as fmri_tumour_cnn
+import medicalgan.releases.adni_alzheimers.adni_alzheimers_cnn as adni_alzheimers_cnn
 
 
 def run():
@@ -25,3 +26,17 @@ def run():
                 # fmri_tumour_gan.generate()
             if task == "detect":
                 fmri_tumour_cnn.train()
+        # if release == "nih_chest_xray":
+            # if task == "train":
+                # nih_chest_xray_gan.train()
+            # if task == "generate":
+                # nih_chest_xray_gan.generate()
+            # if task == "detect":
+            #     nih_chest_xray_cnn.train()
+        if release == "adni_alzheimers":
+            # if task == "train":
+                # adni_alzheimers_gan.train()
+            # if task == "generate":
+                # adni_alzheimers_gan.generate()
+            if task == "detect":
+                adni_alzheimers_cnn.train()
