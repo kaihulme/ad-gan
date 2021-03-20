@@ -10,12 +10,9 @@ RUN \
     apt-get update \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
     && apt-get -y install git procps lsb-release \
-
-    && apt-get -y install texlive \
-    
-    # && pip --disable-pip-version-check --no-cache-dir install autopep8 mypy pylint \
+    # && apt-get -y install texlive \
     && pip install --upgrade pip \
-    && pip install scikit-learn opencv-python numpy pandas matplotlib seaborn plotly \
+    # && pip install -r requirements.txt \
     && groupadd --gid $USER_GID $USERNAME \
     && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
     && apt-get install -y sudo \

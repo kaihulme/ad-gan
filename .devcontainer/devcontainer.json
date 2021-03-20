@@ -12,14 +12,8 @@
 	"settings": {
 		"terminal.integrated.shell.linux": "/bin/bash",
 		"python.pythonPath": "/usr/local/bin/python",
-		// "python.linting.enabled": true,
-		// "python.linting.pylintEnabled": true,
-		// "python.linting.pylintPath": "/usr/local/bin/pylint",
-		// "python.linting.mypyEnabled": true,
-		// "python.linting.mypyPath": "/usr/local/bin/mypy",
-		// "python.formatting.autopep8Path": "/usr/local/bin/autopep8",
 	},
-	"postCreateCommand": "pip install -r requirements.txt",
+	"postCreateCommand": "pip install -r requirements.txt --no-warn-script-location",
 	"extensions": [
 		"ms-python.python",
 		"ms-vscode-remote.remote-containers",
