@@ -6,6 +6,8 @@
 		"-u", "docker",
 		"-h", "tf-gpu",
 		"-v", "/mnt/HDD/Data:/Data/",
+		"-v", "/usr/local/freesurfer:/freesurfer/",
+		"-v", "/usr/local/spm12:/spm12/",
 		"--gpus", "all",
 		"-it",
 	],

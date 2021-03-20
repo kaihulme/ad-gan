@@ -9,7 +9,7 @@ ARG USER_GID=$USER_UID
 RUN \
     apt-get update \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
-    && apt-get -y install git procps lsb-release \
+    && apt-get -y install git procps lsb-release ffmpeg libsm6 libxext6 \
     # && apt-get -y install texlive \
     && pip install --upgrade pip \
     # && pip install -r requirements.txt \
