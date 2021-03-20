@@ -1,4 +1,5 @@
 import os
+from posix import listdir
 import time
 import tensorflow as tf
 from tensorflow.keras import Model
@@ -146,14 +147,24 @@ class SampleGenerator(Callback):
 
 
 def get_dataset(data_dir, rows, cols, batch_size):
+<<<<<<< HEAD:mvp/gan.py
+    X_train = image_dataset_from_directory(
+=======
     data = image_dataset_from_directory(
+>>>>>>> 87faaa0270fcfbfe8d0dbefa4a24f9c000bcbf7e:.old/gan.py
         data_dir, 
         label_mode=None, 
         image_size=(rows, cols), 
         color_mode="grayscale",
+<<<<<<< HEAD:mvp/gan.py
+        batch_size=batch_size
+    )
+    return X_train.map(lambda x: x / 255.0)
+=======
         batch_size=batch_size,
     )
     return data.map(lambda x: x / 255.0)
+>>>>>>> 87faaa0270fcfbfe8d0dbefa4a24f9c000bcbf7e:.old/gan.py
 
 def get_data_length(data_dir):
     class_dirs = [os.listdir(os.path.join(data_dir, class_dir)) for class_dir in os.listdir(data_dir)]
@@ -178,17 +189,36 @@ data = get_dataset(data_dir, rows, cols, batch_size)
 gan = GAN(img_shape=img_shape, batch_size=batch_size, z_dim=z_dim)
 gan.compile(gen_opt=opt, dis_opt=opt, loss=loss)
 
+<<<<<<< HEAD:mvp/gan.py
+epochs = 20
+data_length = get_data_length(data_dir)
+steps_per_epoch = data_length // batch_size
+=======
 epochs = 100
 # data_length = get_data_length(data_dir)
 # steps_per_epoch = data_length // batch_size
+>>>>>>> 87faaa0270fcfbfe8d0dbefa4a24f9c000bcbf7e:.old/gan.py
 workers=4
 max_queue_size=10
 use_multiprocessing=True
 
+<<<<<<< HEAD:mvp/gan.py
+print(f"\ndata length: {data_length}\
+        \nbatch size: {batch_size}\
+        \nsteps per epoch: {steps_per_epoch}\
+        \n")
+
+gan.fit(data,
+        epochs=epochs,
+        steps_per_epoch=steps_per_epoch,
+        workers=workers,
+        max_queue_size=max_queue_size,
+=======
 gan.fit(data,
         epochs=epochs,
         # steps_per_epoch=steps_per_epoch,
         workers=workers,
         # max_queue_size=max_queue_size,
+>>>>>>> 87faaa0270fcfbfe8d0dbefa4a24f9c000bcbf7e:.old/gan.py
         use_multiprocessing=use_multiprocessing,
         callbacks=callbacks)

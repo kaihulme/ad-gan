@@ -30,7 +30,11 @@
 		"eamodio.gitlens",
 		"magicstack.magicpython",
 		"ziyasal.vscode-open-in-github",
+<<<<<<< HEAD
+		"visualstudioexptteam.vscodeintellicode"
+=======
 		"visualstudioexptteam.vscodeintellicode",
 		"james-yu.latex-workshop"
+>>>>>>> 87faaa0270fcfbfe8d0dbefa4a24f9c000bcbf7e
 	]
 }
