@@ -22,9 +22,4 @@ RUN \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-<<<<<<< HEAD
 ENV DEBIAN_FRONTEND=
-=======
-ENV DEBIAN_FRONTEND=
-
->>>>>>> 87faaa0270fcfbfe8d0dbefa4a24f9c000bcbf7e
