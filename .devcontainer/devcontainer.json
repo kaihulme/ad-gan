@@ -26,6 +26,15 @@
 		"donjayamanne.python-extension-pack",
 		"ms-python.vscode-pylance",
 		"ms-azuretools.vscode-docker",
-		"donjayamanne.git-extension-pack"
+		"donjayamanne.git-extension-pack",
+		"felipecaputo.git-project-manager",
+		"donjayamanne.githistory",
+		"alefragnani.project-manager",
+		"wholroyd.jinja",
+		"codezombiech.gitignore",
+		"eamodio.gitlens",
+		"magicstack.magicpython",
+		"ziyasal.vscode-open-in-github",
+		"visualstudioexptteam.vscodeintellicode"
 	]
 }
