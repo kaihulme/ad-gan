@@ -9,9 +9,10 @@ def run():
     Generation of medical images using Generative Adversarial Networks.
     """
     args = sys.argv
-    if not len(args) == 3:
+    if not len(args) > 2:
         print("\nPlease specify release and task:\
                \n>  medicalgan [release] [task]\n")
+        return
     else:
         release, task = args[1], args[2]
         if release == "mnist":
@@ -34,6 +35,11 @@ def run():
             # if task == "detect":
             #     nih_chest_xray_cnn.train()
         if release == "adni_alzheimers":
+            if not len(args) == 4:
+                print("\nPlease specify MRI plane (i.e. transverse, sagital or coronal):\
+                       \n>  medicalgan [adni_alzheimers] [task] [plane]\n")
+                return
+            plane = args[3]
             # if task == "train":
                 # adni_alzheimers_gan.train()
             # if task == "generate":

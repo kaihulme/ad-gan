@@ -8,6 +8,7 @@
 		"-v", "/mnt/HDD/Data:/Data/",
 		"-v", "/usr/local/freesurfer:/freesurfer/",
 		"-v", "/usr/local/spm12:/spm12/",
+		"-v", "/usr/local/MATLAB:/matlab/",
 		"--gpus", "all",
 		"-it",
 	],

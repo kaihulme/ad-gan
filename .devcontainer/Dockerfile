@@ -20,6 +20,7 @@ RUN \
     && chmod 0440 /etc/sudoers.d/$USERNAME \
     && apt-get autoremove -y \
     && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && echo 'PROMPT_DIRTRIM=1' >> "/home/$USERNAME/.bashrc"
 
 ENV DEBIAN_FRONTEND=
