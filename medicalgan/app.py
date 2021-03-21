@@ -10,8 +10,8 @@ def run():
     """
     args = sys.argv
     if not len(args) > 2:
-        print("\nPlease specify release and task:\
-               \n>  medicalgan [release] [task]\n")
+        print("\nPlease specify data and task:\
+               \n>  medicalgan [data] [task]\n")
         return
     else:
         release, task = args[1], args[2]
@@ -34,15 +34,18 @@ def run():
                 # nih_chest_xray_gan.generate()
             # if task == "detect":
             #     nih_chest_xray_cnn.train()
-        if release == "adni_alzheimers":
+        if release == "adni":
             if not len(args) == 4:
                 print("\nPlease specify MRI plane (i.e. transverse, sagital or coronal):\
-                       \n>  medicalgan [adni_alzheimers] [task] [plane]\n")
+                       \n>  medicalgan [adni] [task] [plane]\n")
                 return
             plane = args[3]
+            if not plane in ["transverse", "sagital", "coronal"]:
+                print("\nUnsupported plane, use transverse or sagital\n")
+                return
             # if task == "train":
                 # adni_alzheimers_gan.train()
             # if task == "generate":
                 # adni_alzheimers_gan.generate()
             if task == "detect":
-                adni_alzheimers_cnn.train()
+                adni_alzheimers_cnn.train(plane)
