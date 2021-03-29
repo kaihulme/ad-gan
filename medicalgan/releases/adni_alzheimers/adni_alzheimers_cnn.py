@@ -3,6 +3,7 @@ from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras.optimizers import Adam
 
 from medicalgan.models.architecture.binary_vgg import VGG
+from medicalgan.models.architecture.cnn_batchnorm import CNN_BatchNorm
 from medicalgan.utils.utils import get_dataset, get_data_length
 
 gpu = tf.config.experimental.list_physical_devices('GPU')[0]
@@ -31,7 +32,8 @@ def train(plane):
     val_data = get_dataset(val_dir, rows, cols, batch_size, label_mode="binary")
     # test_data = get_dataset(test_dir, rows, cols, batch_size, label_mode="binary")
 
-    architecture = VGG(img_shape)
+    # architecture = VGG(img_shape)
+    architecture = CNN_BatchNorm(img_shape)
 
     cnn = architecture.cnn
     cnn.compile(

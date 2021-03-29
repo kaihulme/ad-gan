@@ -5,6 +5,7 @@
         "**/node_modules/*/**": true,
         "**/out/**": true,
         "**/data/**": true
-      }
+      },
+      "cmake.configureOnOpen": false
     
 }

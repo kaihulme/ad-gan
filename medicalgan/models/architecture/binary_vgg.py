@@ -89,3 +89,4 @@ class VGG():
             model.summary()
 
         return model
+        

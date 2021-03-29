@@ -7,14 +7,14 @@ class CNN_BatchNorm():
     CNN model architecture class.
     Classification of binary class images.
     """
-    def __init__(self, img_shape, show_summary=False):
+    def __init__(self, img_shape, batch_norm=True, show_summary=False):
         self.img_shape = img_shape
         self.show_summary = show_summary
-        self.cnn = self.build_cnn()
+        self.cnn = self.build_cnn(batch_norm)
 
-    def build_cnn(self):
+    def build_cnn(self, batch_norm):
         """
-        VGG-style CNN architecture:
+        VGG-style CNN architecture with batch-normalisation after conv layers:
 
             64 x conv(3,3) -> relu -> 64 x conv(3,3) -> relu 
 
@@ -51,34 +51,55 @@ class CNN_BatchNorm():
 
         model = Sequential()
 
-        # 2 x 64 * conv(3, 3)
+        # 2 * (64*conv(3, 3) + batch-norm)
         model.add(Conv2D(64, kernel_size=(3, 3), activation="relu", padding="same", input_shape=self.img_shape))
+        if batch_norm:
+            model.add(BatchNormalization())
         model.add(Conv2D(64, kernel_size=(3, 3), activation="relu", padding="same"))
+        if batch_norm:
+            model.add(BatchNormalization())
 
-        # pooling + 2 x 128 * conv(3, 3)
+        # pooling + 2 * (128*conv(3, 3) + batch-norm)
         model.add(MaxPooling2D((2, 2), strides=(2, 2)))
         model.add(Conv2D(128, kernel_size=(3, 3), activation="relu", padding="same"))
+        if batch_norm:
+            model.add(BatchNormalization())
         model.add(Conv2D(128, kernel_size=(3, 3), activation="relu", padding="same"))
+        if batch_norm:
+            model.add(BatchNormalization())
 
-        # pooling + 3 x 512 * conv(3, 3)
+        # pooling + 3 * (512*conv(3, 3) + batch-norm)
         model.add(MaxPooling2D((2, 2), strides=(2, 2)))
         model.add(Conv2D(512, kernel_size=(3, 3), activation="relu", padding="same"))
+        if batch_norm:
+            model.add(BatchNormalization())
         model.add(Conv2D(512, kernel_size=(3, 3), activation="relu", padding="same"))
+        if batch_norm:
+            model.add(BatchNormalization())
         model.add(Conv2D(512, kernel_size=(3, 3), activation="relu", padding="same"))
+        if batch_norm:
+            model.add(BatchNormalization())
 
-        # pooling + 3 x 512 * conv(3, 3)
+        # pooling + 3 * (512*conv(3, 3) + batch-norm)
         model.add(MaxPooling2D((2, 2), strides=(2, 2)))
         model.add(Conv2D(512, kernel_size=(3, 3), activation="relu", padding="same"))
+        if batch_norm:
+            model.add(BatchNormalization())
         model.add(Conv2D(512, kernel_size=(3, 3), activation="relu", padding="same"))
+        if batch_norm:
+            model.add(BatchNormalization())
         model.add(Conv2D(512, kernel_size=(3, 3), activation="relu", padding="same"))
+        if batch_norm:
+            model.add(BatchNormalization())
         
         # pooling + flatten
         model.add(MaxPooling2D((2, 2), strides=(2, 2)))
         model.add(Flatten())
 
-        # 2 x dense(4096) + dropout
-        model.add(Dense(4096, activation="relu"))
-        model.add(Dropout(0.5))
+        # 2 * dense(4096) + dropout
+        if not batch_norm:
+            model.add(Dense(4096, activation="relu"))
+            model.add(Dropout(0.5))
         model.add(Dense(4096, activation="relu"))
 
         # categorisation
