@@ -6,6 +6,8 @@
         "**/out/**": true,
         "**/data/**": true
       },
-      "cmake.configureOnOpen": false
+      "cmake.configureOnOpen": false,
+      "python.pythonPath": "/opt/miniconda-latest/envs/neuro/bin/python",
+      "jupyter.jupyterServerType": "local"
     
 }

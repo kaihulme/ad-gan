@@ -1,22 +1,15 @@
 {
-	"name": "tf-gpu",
-	"dockerFile": "Dockerfile",
-	"runArgs": [
-		//"-u", "$(id -u):$(id -g)"
-		"-u", "tf-gpu",
-		"-h", "docker",
-		"-v", "/mnt/HDD/Data:/Data/",
-		"-v", "/usr/local/freesurfer:/freesurfer/",
-		"-v", "/usr/local/spm12:/spm12/",
-		"-v", "/usr/local/MATLAB:/matlab/",
-		"--gpus", "all",
-		"-it",
-	],
-	"settings": {
-		"terminal.integrated.shell.linux": "/bin/bash",
-		"python.pythonPath": "/usr/local/bin/python",
+	"name": "neuro",
+	"build": {
+		"dockerfile": "Dockerfile",
 	},
-	"postCreateCommand": "pip install -r requirements.txt --no-warn-script-location",
+	"runArgs": [
+		// "-u", "neuro",
+		"-h", "docker",
+		"-v", "Data:/Data/",
+		// "--gpus", "all",
+		// "-it",
+	],
 	"extensions": [
 		"ms-python.python",
 		"ms-vscode-remote.remote-containers",
