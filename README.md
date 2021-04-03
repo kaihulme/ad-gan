@@ -6,6 +6,9 @@ MRI pre-processing pipelines and classification of ailments in the brain, with g
 
 ## Requirements
 
+- Docker
+- Nvidia-Docker(2)
+
 Two development containers are provided depending on the task:
 
 - `.devcontainer_tf_gpu/` _(TensorFlow models)_
