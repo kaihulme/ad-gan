@@ -10,6 +10,10 @@
 		// "--gpus", "all",
 		// "-it",
 	],
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"python.pythonPath": "/opt/miniconda-latest/envs/neuro/bin/python",
+	},
 	"extensions": [
 		"ms-python.python",
 		"ms-vscode-remote.remote-containers",
