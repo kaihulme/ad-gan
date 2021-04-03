@@ -1,14 +1,10 @@
 {
-	"name": "tf-gpu",
+	"name": "tf_gpu",
 	"dockerFile": "Dockerfile",
 	"runArgs": [
-		//"-u", "$(id -u):$(id -g)"
-		"-u", "tf-gpu",
+		"-u", "tf_gpu",
 		"-h", "docker",
 		"-v", "/mnt/HDD/Data:/Data/",
-		"-v", "/usr/local/freesurfer:/freesurfer/",
-		"-v", "/usr/local/spm12:/spm12/",
-		"-v", "/usr/local/MATLAB:/matlab/",
 		"--gpus", "all",
 		"-it",
 	],
@@ -16,7 +12,7 @@
 		"terminal.integrated.shell.linux": "/bin/bash",
 		"python.pythonPath": "/usr/local/bin/python",
 	},
-	"postCreateCommand": "pip install -r requirements.txt --no-warn-script-location",
+	"postCreateCommand": "pip install -r requirements_tf_gpu.txt --no-warn-script-location",
 	"extensions": [
 		"ms-python.python",
 		"ms-vscode-remote.remote-containers",
