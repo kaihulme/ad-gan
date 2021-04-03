@@ -6,12 +6,17 @@ MRI pre-processing pipelines and classification of ailments in the brain, with g
 
 ## Docker containers
 
-Two development containers are provided depending on the task.
+Two development containers are provided depending on the task:
+
+- `.devcontainer_tf_gpu/` _(TensorFlow models)_
+- `.devcontainer_neuro/` _(MRI pre-processing)_
+
+Rename target container to `.devcontainer/` to use in VSCode with the [Remote Containers](https://code.visualstudio.com/docs/remote/containers) extension.
 
 ### tf_gpu
 
 - Tensorflow GPU environment.
-- Main development container for interfacing with Tensorflow models.
+- Main development container for interfacing with TensorFlow models.
 
 ### neuro
 
