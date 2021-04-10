@@ -4,7 +4,8 @@
 	"runArgs": [
 		"-u", "tf_gpu",
 		"-h", "docker",
-		"-v", "/mnt/HDD/Data:/Data/",
+		// "-v", "/mnt/HDD/Data:/Data/",
+		"-v", "/Data:/Data/",
 		"--gpus", "all",
 		"-it",
 	],

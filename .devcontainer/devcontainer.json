@@ -6,7 +6,8 @@
 	"runArgs": [
 		// "-u", "neuro",
 		"-h", "docker",
-		"-v", "Data:/Data/",
+		// "-v", "/mnt/HDD/Data:/Data/",
+		"-v", "/home/kai/Data:/Data/",
 		// "--gpus", "all",
 		// "-it",
 	],
