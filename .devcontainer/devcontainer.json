@@ -1,20 +1,19 @@
 {
-	"name": "neuro",
-	"build": {
-		"dockerfile": "Dockerfile",
-	},
+	"name": "tf_gpu",
+	"dockerFile": "Dockerfile",
 	"runArgs": [
-		// "-u", "neuro",
-		"-h", "docker",
-		// "-v", "/mnt/HDD/Data:/Data/",
-		"-v", "/home/kai/Data:/Data/",
-		// "--gpus", "all",
-		// "-it",
+		"-u", "docker",
+		"-h", "tf-gpu",
+		"-v", "/mnt/HDD/Data:/Data/",
+		// "-v", "/Data:/Data/",
+		"--gpus", "all",
+		"-it",
 	],
 	"settings": {
 		"terminal.integrated.shell.linux": "/bin/bash",
-		"python.pythonPath": "/opt/miniconda-latest/envs/neuro/bin/python",
+		"python.pythonPath": "/usr/local/bin/python",
 	},
+	"postCreateCommand": "pip install -r requirements_tf_gpu.txt --no-warn-script-location",
 	"extensions": [
 		"ms-python.python",
 		"ms-vscode-remote.remote-containers",
@@ -32,6 +31,5 @@
 		"magicstack.magicpython",
 		"ziyasal.vscode-open-in-github",
 		"visualstudioexptteam.vscodeintellicode",
-		"grapecity.gc-excelviewer"
 	],
 }
