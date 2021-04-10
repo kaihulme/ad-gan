@@ -2,6 +2,7 @@ import sys
 import medicalgan.releases.mnist.mnist_gan as mnist_gan
 import medicalgan.releases.fmri_tumour.fmri_tumour_cnn as fmri_tumour_cnn
 import medicalgan.releases.adni_alzheimers.adni_alzheimers_cnn as adni_alzheimers_cnn
+import medicalgan.releases.oasis.oasis_cnn as oasis_cnn
 
 
 def run():
@@ -49,3 +50,14 @@ def run():
                 # adni_alzheimers_gan.generate()
             if task == "detect":
                 adni_alzheimers_cnn.train(plane)
+
+        if release == "oasis":
+            if not len(args) == 3:
+                print("\nUnrecognised arguments.\nExpected:\n\t> medicalgan [oasis] [task]\n")
+                return
+            # if task == "train":
+                # adni_alzheimers_gan.train()
+            # if task == "generate":
+                # adni_alzheimers_gan.generate()
+            if task == "detect":
+                oasis_cnn.train()
