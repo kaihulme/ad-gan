@@ -16,19 +16,25 @@ class CNN_OASIS():
 
         model = Sequential()
         
-        model.add(Conv2D(100, kernel_size=(3, 3), strides=(10,10),
-                        activation='sigmoid', padding ='same',
-                        input_shape=self.img_shape))
-        
-        model.add(MaxPooling2D(pool_size=(2, 2), padding='valid'))
-        model.add(Conv2D(50, (3, 3), activation='sigmoid', strides=(5,5), padding ='same'))
-        
-        model.add(MaxPooling2D(pool_size=(2, 2), padding='valid'))
-        model.add(Conv2D(25, kernel_size=(3,3), activation='sigmoid', strides = (1,1), padding ='same'))
-        
-        model.add(MaxPooling2D(pool_size=(1, 1), padding='valid'))
+        model.add(Conv2D(64, kernel_size=(3, 3), padding ="same", activation="relu", input_shape=self.img_shape))
+        model.add(BatchNormalization())
+        model.add(Conv2D(64, kernel_size=(3, 3), padding ="same", activation="relu"))
+        model.add(BatchNormalization())
+
+        model.add(MaxPooling2D((2, 2), strides=(2,2)))
+        model.add(Conv2D(128, kernel_size=(3, 3), padding ="same", activation="relu"))
+        model.add(BatchNormalization())
+        # model.add(Conv2D(128, kernel_size=(3, 3), padding ="same", activation="relu"))
+        # model.add(BatchNormalization())
+
+        model.add(MaxPooling2D((2, 2), strides=(2,2)))
+        model.add(Conv2D(128, kernel_size=(3, 3), padding ="same", activation="relu"))
+        model.add(BatchNormalization())
+        # model.add(Conv2D(128, kernel_size=(3, 3), padding ="same", activation="relu"))
+        # model.add(BatchNormalization())
+
+        model.add(MaxPooling2D((2, 2), strides=(2,2)))
         model.add(Flatten())
-        
         
         model.add(Dense(1, activation='sigmoid'))
 

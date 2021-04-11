@@ -25,15 +25,19 @@ def train():
         restore_best_weights=True
     )
 
-    batch_size = 32
-    opt = Adam(learning_rate=0.0001)
-    loss = BinaryCrossentropy()
+    # opt = Adam(learning_rate=0.0001)
+    # loss = BinaryCrossentropy()
+    # metrics = ["accuracy"]
+    opt = "adam"
+    loss = "binary_crossentropy"
     metrics = ["accuracy"]
+
+    batch_size = 32
     callbacks = [earlystopping]
 
-    train_dir = "resources/data/oasis/train"
-    val_dir = "resources/data/oasis/val"
-    test_dir = "resources/data/oasis/test"
+    train_dir = "resources/data/oasis/single/transverse/train"
+    val_dir = "resources/data/oasis/single/transverse/val"
+    test_dir = "resources/data/oasis/single/transverse/test"
 
     train_data = get_dataset(train_dir, rows, cols, batch_size, label_mode="binary")
     val_data = get_dataset(val_dir, rows, cols, batch_size, label_mode="binary")
