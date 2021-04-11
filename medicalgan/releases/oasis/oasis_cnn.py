@@ -12,11 +12,18 @@ gpu = tf.config.experimental.list_physical_devices('GPU')[0]
 tf.config.experimental.set_memory_growth(gpu, True)
 
 
-def train():
+def train(plane):
     """
     Build and train CNN for tumour detection in fMRI images.
     """
-    rows, cols, channels = (208, 176, 1)
+    if plane == "transverse":
+        rows, cols, channels = (208, 176, 1)
+    elif plane == "coronal":
+        rows, cols, channels = (176, 176, 1)
+    else:
+        print("Incompatable plane")
+        return
+    
     img_shape = (rows, cols, channels)
 
     earlystopping = EarlyStopping(
@@ -32,12 +39,16 @@ def train():
     loss = "binary_crossentropy"
     metrics = ["accuracy"]
 
-    batch_size = 32
+    batch_size = 12
     callbacks = [earlystopping]
 
-    train_dir = "resources/data/oasis/single/transverse/train"
-    val_dir = "resources/data/oasis/single/transverse/val"
-    test_dir = "resources/data/oasis/single/transverse/test"
+    train_dir = "resources/data/oasis/multi/{0}/train".format(plane)
+    val_dir = "resources/data/oasis/multi/{0}/val".format(plane)
+    test_dir = "resources/data/oasis/multi/{0}/test".format(plane)
+
+    # train_dir = "resources/data/oasis/single/{0}/train".format(plane)
+    # val_dir = "resources/data/oasis/single/{0}/val".format(plane)
+    # test_dir = "resources/data/oasis/single/{0}/test".format(plane)
 
     train_data = get_dataset(train_dir, rows, cols, batch_size, label_mode="binary")
     val_data = get_dataset(val_dir, rows, cols, batch_size, label_mode="binary")

@@ -52,12 +52,16 @@ def run():
                 adni_alzheimers_cnn.train(plane)
 
         if release == "oasis":
-            if not len(args) == 3:
-                print("\nUnrecognised arguments.\nExpected:\n\t> medicalgan [oasis] [task]\n")
+            if not len(args) == 4:
+                print("\nPlease specify MRI plane (i.e. transverse, sagital or coronal):\
+                       \n>  medicalgan [oasis] [task] [plane]\n")
+            plane = args[3]
+            if not plane in ["transverse", "sagital", "coronal"]:
+                print("\nUnsupported plane, use transverse or sagital\n")
                 return
             # if task == "train":
                 # adni_alzheimers_gan.train()
             # if task == "generate":
                 # adni_alzheimers_gan.generate()
             if task == "detect":
-                oasis_cnn.train()
+                oasis_cnn.train(plane)
