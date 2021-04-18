@@ -40,9 +40,8 @@ def get_data_length(data_dir):
 
 def get_model(dataset, model_type, model_note):
     model_dir = "out/models/{0}/{1}/{2}".format(dataset, model_type, model_note)
-    latest_model = os.listdir(model_dir)[-1]
+    latest_model = sorted(os.listdir(model_dir))[-1]
     model_path = os.path.join(model_dir, latest_model)
-    print(f"using model: {model_path}")
     return load_model(model_path)
 
 

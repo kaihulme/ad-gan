@@ -44,7 +44,7 @@ def train(plane, depth):
     earlystopping = EarlyStopping(
         monitor="val_loss", 
         patience=10, 
-        restore_best_weights=True
+        # restore_best_weights=True,
     )
     tensorboard = TensorBoard(get_tb_dir(DATASET, MODEL_TYPE, MODEL_NOTE))
     callbacks = [earlystopping, tensorboard]
@@ -110,39 +110,21 @@ def evaluate(plane, depth):
     test_dir = "resources/data/oasis/{0}/{1}/test".format(depth, plane)
     test_data = get_dataset(test_dir, rows, cols, batch_size, label_mode="binary", shuffle=False)
     # get real labels and predictions
-    y = np.asarray([y for x, y in test_data]).flatten()
-
-    # preds = cnn.predict(test_data).flatten().round()
+    y = np.asarray([y for _, y in test_data]).flatten()
     preds = cnn.predict(test_data).flatten().round()
-
     # set correct if prediction is the same as label
     correct = np.array([1 if pred == label else 0 for (pred, label) in zip(preds, y)])
-
-    print("\n", y, "\n")
-    print("\n", preds, "\n")
-    print("\n", correct, "\n")
-
-    # # split per subject
+    # split per subject
     samples_per_subject = 6
     num_subjects = len(y) // samples_per_subject
-    subjects_correct = np.split(correct, num_subjects)
-
-    print("\n", num_subjects, "\n")
-    print("\n", subjects_correct, "\n")
-
-    # # get average prediction
+    subjects_correct = np.asarray(np.split(correct, num_subjects))
+    # get average prediction
     subjects_score = [normround(np.sum(subject_correct) / samples_per_subject) for subject_correct in subjects_correct]
-
-    print("\n", subjects_score, "\n")
-
-    standard_accuracy = correct.sum() / len(y)
-    print(f"\nStandard Accuracy: {100*standard_accuracy:.2f}%\n")
-
-    # get overall accuracy
-    accuracy = np.sum(subjects_score) / num_subjects
-    print(f"\nAccuracy: {100*accuracy:.2f}%\n")
-
+    # get overall subject_accuracy
+    subject_accuracy = np.sum(subjects_score) / num_subjects
     # evaluate
     cnn.evaluate(test_data)
 
-
+    print("\n", subjects_correct)
+    print("\n", subjects_score)
+    print(f"\nSubject accuracy: {100*subject_accuracy:.2f}%\n")
