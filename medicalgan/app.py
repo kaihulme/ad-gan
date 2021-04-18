@@ -64,4 +64,6 @@ def run():
             # if task == "generate":
                 # adni_alzheimers_gan.generate()
             if task == "detect":
-                oasis_cnn.train(plane)
+                oasis_cnn.train(plane, "multi")
+            if task == "evaluate":
+                oasis_cnn.evaluate(plane, "multi")
