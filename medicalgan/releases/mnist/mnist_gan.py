@@ -6,7 +6,7 @@ from tensorflow.keras.optimizers import Adam
 from medicalgan.models.gan import GAN
 from medicalgan.callbacks.samplegenerator import SampleGenerator
 from medicalgan.models.architecture.dcgan_2828 import DCGAN_2828
-from medicalgan.utils.utils import get_dataset, get_tb_dir
+from medicalgan.utils.utils import get_dataset, get_tb_dir, get_model_path
 
 gpu = tf.config.experimental.list_physical_devices('GPU')[0]
 tf.config.experimental.set_memory_growth(gpu, True)
@@ -28,11 +28,11 @@ def train():
     opt = Adam(learning_rate=0.0001)
     loss = BinaryCrossentropy()
 
-    sample_generator = SampleGenerator(DATASET, MODEL_TYPE, MODEL_NOTE, z_dim, sample_every=10)
+    sample_generator = SampleGenerator(DATASET, MODEL_TYPE, MODEL_NOTE, z_dim, sample_every=1)
     tensorboard = TensorBoard(get_tb_dir(DATASET, MODEL_TYPE, MODEL_NOTE))
     callbacks = [sample_generator, tensorboard]
 
-    data_dir = "resources/data/mnist/train"
+    data_dir = "resources/data/mnist/train/"
     data = get_dataset(data_dir, rows, cols, batch_size)
 
     architecture = DCGAN_2828(img_shape, z_dim=z_dim)
@@ -52,3 +52,6 @@ def train():
             use_multiprocessing=use_multiprocessing,
             callbacks=callbacks
     )
+
+    gan_path = get_model_path(DATASET, MODEL_TYPE, MODEL_NOTE)
+    gan.save(gan_path)

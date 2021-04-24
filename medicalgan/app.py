@@ -54,20 +54,31 @@ def run():
                 adni_alzheimers_cnn.train(plane)
 
         if release == "oasis":
-            if not len(args) == 4:
-                print("\nPlease specify MRI plane (i.e. transverse, sagital or coronal):\
-                       \n>  medicalgan [oasis] [task] [plane]\n")
+            if not (len(args) == 5 or len(args) == 6):
+                print("\nPlease specify arguments:\
+                       \n>  medicalgan [oasis] [task] [plane] [depth]\n")
+                return
             plane = args[3]
             if not plane in ["transverse", "sagital", "coronal"]:
                 print("\nUnsupported plane, use transverse or sagital\n")
                 return
+            depth = args[4]
+            if not depth in ["single", "multi"]:
+                print("\nUnsupported depth, use single or multi\n")
+                return
             if task == "train_gan":
-                oasis_gan.train()
+                label = args[5]
+                if not label in ["0", "1"]:
+                    print("\nPlease specify class to generate (i.e. 0 or 1):\
+                       \n>  medicalgan [oasis] [task] [plane] [depth] [label]\n")
+                    return
+                label = int(label)
+                oasis_gan.train(plane, depth, label)
             # if task == "generate":
                 # oasis_gan.generate()
             if task == "train_cnn":
-                oasis_cnn.train(plane, "multi")
+                oasis_cnn.train(plane, depth)
             if task == "train_transferlearning_cnn":
-                oasis_transferlearning.train(plane, "multi")
+                oasis_transferlearning.train(plane, depth)
             if task == "evaluate_cnn":
-                oasis_cnn.evaluate(plane, "multi")
+                oasis_cnn.evaluate(plane, depth)
