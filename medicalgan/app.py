@@ -3,6 +3,8 @@ import medicalgan.releases.mnist.mnist_gan as mnist_gan
 import medicalgan.releases.fmri_tumour.fmri_tumour_cnn as fmri_tumour_cnn
 import medicalgan.releases.adni_alzheimers.adni_alzheimers_cnn as adni_alzheimers_cnn
 import medicalgan.releases.oasis.oasis_cnn as oasis_cnn
+import medicalgan.releases.oasis.oasis_gan as oasis_gan
+import medicalgan.releases.oasis.oasis_transferlearning as oasis_transferlearning
 
 
 def run():
@@ -17,7 +19,7 @@ def run():
     else:
         release, task = args[1], args[2]
         if release == "mnist":
-            if task == "train":
+            if task == "train_gan":
                 mnist_gan.train()
             # if task == "generate":
                 # mvp.generate()
@@ -26,14 +28,14 @@ def run():
                 # fmri_tumour_gan.train()
             # if task == "generate":
                 # fmri_tumour_gan.generate()
-            if task == "detect":
+            if task == "train_cnn":
                 fmri_tumour_cnn.train()
         # if release == "nih_chest_xray":
             # if task == "train":
                 # nih_chest_xray_gan.train()
             # if task == "generate":
                 # nih_chest_xray_gan.generate()
-            # if task == "detect":
+            # if task == "train_cnn":
             #     nih_chest_xray_cnn.train()
         if release == "adni":
             if not len(args) == 4:
@@ -44,11 +46,11 @@ def run():
             if not plane in ["transverse", "sagital", "coronal"]:
                 print("\nUnsupported plane, use transverse or sagital\n")
                 return
-            # if task == "train":
+            # if task == "train_gan":
                 # adni_alzheimers_gan.train()
             # if task == "generate":
                 # adni_alzheimers_gan.generate()
-            if task == "detect":
+            if task == "train_cnn":
                 adni_alzheimers_cnn.train(plane)
 
         if release == "oasis":
@@ -59,11 +61,13 @@ def run():
             if not plane in ["transverse", "sagital", "coronal"]:
                 print("\nUnsupported plane, use transverse or sagital\n")
                 return
-            # if task == "train":
-                # adni_alzheimers_gan.train()
+            if task == "train_gan":
+                oasis_gan.train()
             # if task == "generate":
-                # adni_alzheimers_gan.generate()
-            if task == "detect":
+                # oasis_gan.generate()
+            if task == "train_cnn":
                 oasis_cnn.train(plane, "multi")
-            if task == "evaluate":
+            if task == "train_transferlearning_cnn":
+                oasis_transferlearning.train(plane, "multi")
+            if task == "evaluate_cnn":
                 oasis_cnn.evaluate(plane, "multi")

@@ -9,7 +9,10 @@ class SampleGenerator(Callback):
     """
     Outputs generated images every specified epoch.
     """
-    def __init__(self, z_dim, n=10, sample_every=1):
+    def __init__(self, dataset, model_type, model_note, z_dim, n=10, sample_every=1):
+        self.dataset = dataset
+        self.model_type = model_type
+        self.model_note = model_note
         self.n = n
         self.sample_every = sample_every
         self.z_dim = z_dim
@@ -32,9 +35,15 @@ class SampleGenerator(Callback):
                 img.save(filename)
 
     def get_out_dir(self):
-        out_dir = os.path.join(os.getcwd(), "out/training_samples")
+        out_dir = os.path.join(
+            os.getcwd(), 
+            "out/training_samples/{0}/{1}/{2}".format(self.dataset, self.model_type, self.model_note)
+        )
         cur_time = time.strftime("%y-%m-%d_%H:%M:%S")
-        return os.path.join(out_dir, cur_time)
+        out_dir = os.path.join(out_dir, cur_time)
+        if not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
+        return out_dir
 
     def get_epoch_dir(self, epoch):
         epoch_dir = "epoch_{0}".format(str(epoch))

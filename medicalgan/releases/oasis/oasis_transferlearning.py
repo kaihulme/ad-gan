@@ -2,11 +2,13 @@ import os
 import numpy as np
 import tensorflow as tf
 
+from tensorflow.keras import Input, Model
+from tensorflow.keras.layers import GlobalAveragePooling2D, Dense
 from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras.metrics import Accuracy, BinaryAccuracy, AUC, Precision, Recall
 from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
-from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.python.util import nest
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.applications import ResNet50, Xception
 
 from medicalgan.models.architecture.binary_vgg import VGG
 from medicalgan.models.architecture.cnn_oasis import CNN_OASIS
@@ -19,56 +21,87 @@ tf.random.set_seed(42)
 
 DATASET = "oasis"
 MODEL_TYPE = "ad_classifier"
-MODEL_NOTE = "32_32_64_64_dropout_70_cnn_sgd"
+MODEL_NOTE = "transfer_learning_resnet50"
 
 def train(plane, depth):
     """
     Build and train CNN for tumour detection in fMRI images.
     """
-    if plane == "transverse":
-        rows, cols, channels = (208, 176, 1)
-    elif plane == "coronal":
-        rows, cols, channels = (176, 176, 1)
-    else:
-        print("Incompatable plane")
-        return
+    # if plane == "transverse":
+        # rows, cols, channels = (208, 176, 1)
+    # elif plane == "coronal":
+        # rows, cols, channels = (176, 176, 1)
+    # else:
+        # print("Incompatable plane")
+        # return
+    # img_shape = (rows, cols, channels)
+
+    batch_size = 6
+
+    # pretrained model requires RGB 244x244 images
+    rows, cols, channels = (244, 244, 3)
     img_shape = (rows, cols, channels)
-    batch_size = 12
+    color_mode="rgb"
     
     # data generators
     train_dir = "resources/data/oasis/{0}/{1}/train".format(depth, plane)    
     val_dir = "resources/data/oasis/{0}/{1}/val".format(depth, plane)
     test_dir = "resources/data/oasis/{0}/{1}/test".format(depth, plane)
 
-    # train_data = get_dataset(train_dir, rows, cols, batch_size, label_mode="binary")
-    train_data = get_aug_dataset(train_dir, rows, cols, batch_size, label_mode="binary")
-    val_data = get_dataset(val_dir, rows, cols, batch_size, label_mode="binary")
-    test_data = get_dataset(test_dir, rows, cols, batch_size, label_mode="binary")
-    
+    train_data = get_dataset(train_dir, rows, cols, batch_size, label_mode="binary", color_mode=color_mode)
+    # train_data = get_dataset(train_dir, rows, cols, batch_size, label_mode="binary", color_mode=color_mode)
+    val_data = get_dataset(val_dir, rows, cols, batch_size, label_mode="binary", color_mode=color_mode)
+    test_data = get_dataset(test_dir, rows, cols, batch_size, label_mode="binary", color_mode=color_mode)
+
     # callbakcs
     earlystopping = EarlyStopping(
         monitor="val_loss", 
         patience=10, 
-        restore_best_weights=True,
+        # restore_best_weights=True,
     )
     tensorboard = TensorBoard(get_tb_dir(DATASET, MODEL_TYPE, MODEL_NOTE))
-    callbacks = [earlystopping, tensorboard]
+    callbacks = [
+        earlystopping,
+        tensorboard,
+    ]
 
-    opt = SGD(learning_rate=1e-5, momentum=0.9, nesterov=True)
-    # opt = Adam(learning_rate=1e-5)
+    opt = Adam() #0.0001
     loss = BinaryCrossentropy(from_logits=True)
-    metrics = [BinaryAccuracy(), AUC(), Precision(), Recall(), f1_score]
+    metrics = [BinaryAccuracy()]#, AUC(), Precision(), Recall(), f1_score]
+    # metrics = ["accuracy"]
+
+    ##### get pretrained model #####
+
+    base_model = ResNet50(
+        weights="imagenet",
+        input_shape=img_shape,
+        include_top=False,
+    )
+    base_model.trainable = False
+
+    inputs = Input(shape=img_shape)
+
+    x = base_model(inputs, training=False)
+
+    x = GlobalAveragePooling2D()(x)
+
+    outputs = Dense(1, activation="sigmoid")(x)
+
+    cnn = Model(inputs, outputs)
+
+    ##### fit output layers ####
 
     # architecture = VGG(img_shape)
-    architecture = CNN_OASIS(img_shape, show_summary=True)
-    cnn = architecture.cnn
+    # architecture = CNN_OASIS(img_shape)
+    # cnn = architecture.cnn
+
     cnn.compile(
         optimizer=opt,
         loss=loss,
         metrics=metrics,
     )
 
-    epochs = 1000
+    # epochs = 1000
     # data_length = get_data_length(data_dir)
     # steps_per_epoch = data_length // batch_size
     # workers=4
@@ -78,13 +111,36 @@ def train(plane, depth):
     cnn.fit(
         train_data,
         validation_data = val_data,
-        epochs=epochs,
+        epochs=1000,
         # steps_per_epoch=1000,
         # workers=workers,
         # max_queue_size=max_queue_size,
         # use_multiprocessing=use_multiprocessing,
         callbacks=callbacks,
     )
+
+    ##### fine tune rest of model #######
+
+    base_model.trainable = True
+
+    cnn.compile(
+        optimizer=Adam(learning_rate=1e-5),
+        loss=loss,
+        metrics=metrics
+    )
+
+    cnn.fit(
+        train_data,
+        validation_data = val_data,
+        epochs=1000,
+        # steps_per_epoch=1000,
+        # workers=workers,
+        # max_queue_size=max_queue_size,
+        # use_multiprocessing=use_multiprocessing,
+        callbacks=callbacks,
+    )
+
+    ################
     
     # save model
     cnn_path = get_model_path(DATASET, MODEL_TYPE, MODEL_NOTE)
