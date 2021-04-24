@@ -1,15 +1,17 @@
 import os
 import math
 import time
+import cv2 as cv
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow.keras.backend as K
 
 from tensorflow.keras.preprocessing import image_dataset_from_directory
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
 from tensorflow.keras.models import load_model
 
+import matplotlib.pyplot as plt
 
 def normalise_dataset(x, y):
     return x / 255.0, y
@@ -55,7 +57,7 @@ def get_singleclass_aug_dataset(data_dir, rows, cols, batch_size, label, shuffle
     target_dir = os.path.join(os.getcwd(), data_dir, str(label))
     paths = [os.path.join(target_dir, name) for name in os.listdir(target_dir)]
     labels = [label] * len(paths)
-    df = pd.DataFrame({"paths": paths, "labels": labels})
+    df = pd.DataFrame({"paths": paths})#, "labels": labels})
 
     aug_datagen = ImageDataGenerator(
         rescale=1.0/255.0,
@@ -64,15 +66,24 @@ def get_singleclass_aug_dataset(data_dir, rows, cols, batch_size, label, shuffle
     )
     aug_data = aug_datagen.flow_from_dataframe(
         df,
-        class_mode="raw", 
+        class_mode=None, 
         x_col="paths", 
-        y_col="labels",
+        # y_col="labels",
         target_size=(rows, cols), 
         color_mode=color_mode,
         batch_size=batch_size,
         shuffle=shuffle,
     )
     return aug_data
+
+
+def get_singleclass_data(data_dir, rows, cols, label):
+    target_dir = os.path.join(os.getcwd(), data_dir, str(label))
+    paths = [os.path.join(target_dir, name) for name in os.listdir(target_dir)]
+
+    data = np.asarray([img_to_array(load_img(path, color_mode="grayscale", target_size=(rows, cols))) for path in paths])
+    labels = np.asarray([label] * len(paths)).astype("uint8")
+    return data, labels
 
 
 def get_data_length(data_dir):

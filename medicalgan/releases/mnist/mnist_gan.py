@@ -35,6 +35,10 @@ def train():
     data_dir = "resources/data/mnist/train/"
     data = get_dataset(data_dir, rows, cols, batch_size)
 
+    for x in data:
+        print(x.shape)
+        break
+
     architecture = DCGAN_2828(img_shape, z_dim=z_dim)
 
     gan = GAN(architecture=architecture, img_shape=img_shape, batch_size=batch_size, z_dim=z_dim)

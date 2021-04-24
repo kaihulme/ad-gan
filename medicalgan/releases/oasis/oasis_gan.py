@@ -1,11 +1,13 @@
 import tensorflow as tf
+
 from tensorflow.keras.losses import BinaryCrossentropy
+from tensorflow.keras.callbacks import TensorBoard
 from tensorflow.keras.optimizers import Adam
 
 from medicalgan.models.gan import GAN
 from medicalgan.callbacks.samplegenerator import SampleGenerator
 from medicalgan.models.architecture.dcgan_oasis import DCGAN_OASIS
-from medicalgan.utils.utils import get_singleclass_aug_dataset, get_model_path
+from medicalgan.utils.utils import get_dataset, get_singleclass_aug_dataset, get_singleclass_data, get_model_path, get_tb_dir
 
 gpu = tf.config.experimental.list_physical_devices('GPU')[0]
 tf.config.experimental.set_memory_growth(gpu, True)
@@ -29,10 +31,13 @@ def train(plane, depth, label):
 
 	# may need to fix dir for labels
 	sample_generator = SampleGenerator(DATASET, MODEL_TYPE, MODEL_NOTE, z_dim, sample_every=10, label=label)
-	callbacks = [sample_generator]
+	tensorboard = TensorBoard(get_tb_dir(DATASET, MODEL_TYPE, MODEL_NOTE))
+	callbacks = [sample_generator, tensorboard]
 
 	data_dir = "resources/data/oasis/{0}/{1}/train".format(depth, plane)
-	data = get_singleclass_aug_dataset(data_dir, rows, cols, batch_size, label)
+	data = get_dataset(data_dir, rows, cols, batch_size)
+	# data = get_singleclass_aug_dataset(data_dir, rows, cols, batch_size, label)
+	# X, y = get_singleclass_data(data_dir, rows, cols, label)
 
 	architecture = DCGAN_OASIS(img_shape, z_dim=z_dim)
 
@@ -45,12 +50,14 @@ def train(plane, depth, label):
 	use_multiprocessing=True
 
 	gan.fit(
+		# X,
 		data,
+		batch_size=batch_size,
 		epochs=epochs,
 		workers=workers,
 		max_queue_size=max_queue_size,
 		use_multiprocessing=use_multiprocessing,
-		# callbacks=callbacks
+		callbacks=callbacks
 	)
 
 	gan_path = get_model_path(DATASET, MODEL_TYPE, MODEL_NOTE, label)
