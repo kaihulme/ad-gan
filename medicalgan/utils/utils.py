@@ -13,11 +13,13 @@ from tensorflow.keras.models import load_model
 
 import matplotlib.pyplot as plt
 
-def normalise_dataset(x, y):
+def normalise_dataset(x, y, pixrange="01"):
+    if pixrange == "-11":
+        return (x - 127.5) / 127.5
     return x / 255.0, y
 
 
-def get_dataset(data_dir, rows, cols, batch_size, label_mode=None, shuffle=True, color_mode="grayscale"):
+def get_dataset(data_dir, rows, cols, batch_size, label_mode=None, shuffle=True, color_mode="grayscale", pixrange="01"):
     """
     Creates tf.data object from directory.
     """
@@ -30,6 +32,10 @@ def get_dataset(data_dir, rows, cols, batch_size, label_mode=None, shuffle=True,
         batch_size=batch_size,
         shuffle=shuffle,
     )
+    if pixrange == "-11":
+        if label_mode:
+            return data.map(normalise_dataset, pixrange)
+        return data.map(lambda x: (x - 127.5) / 127.5)
     if label_mode:
         return data.map(normalise_dataset)
     return data.map(lambda x: x / 255.0)

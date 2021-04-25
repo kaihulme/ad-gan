@@ -4,6 +4,7 @@ import medicalgan.releases.fmri_tumour.fmri_tumour_cnn as fmri_tumour_cnn
 import medicalgan.releases.adni_alzheimers.adni_alzheimers_cnn as adni_alzheimers_cnn
 import medicalgan.releases.oasis.oasis_cnn as oasis_cnn
 import medicalgan.releases.oasis.oasis_gan as oasis_gan
+import medicalgan.releases.oasis.oasis_wgan as oasis_wgan
 import medicalgan.releases.oasis.oasis_transferlearning as oasis_transferlearning
 
 
@@ -74,6 +75,14 @@ def run():
                     return
                 label = int(label)
                 oasis_gan.train(plane, depth, label)
+            if task == "train_wgan":
+                label = args[5]
+                if not label in ["0", "1"]:
+                    print("\nPlease specify class to generate (i.e. 0 or 1):\
+                       \n>  medicalgan [oasis] [task] [plane] [depth] [label]\n")
+                    return
+                label = int(label)
+                oasis_wgan.train(plane, depth, label)
             # if task == "generate":
                 # oasis_gan.generate()
             if task == "train_cnn":
