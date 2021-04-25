@@ -14,14 +14,14 @@ tf.config.experimental.set_memory_growth(gpu, True)
 
 DATASET = "oasis"
 MODEL_TYPE = "small_gan"
-MODEL_NOTE = "28_28"
+MODEL_NOTE = "176_176"
 
 
 def train(plane, depth, label):
 	"""
 	Build and train GAN for MNIST image generation.
 	"""
-	rows, cols, channels = (28, 28, 1)
+	rows, cols, channels = (176, 176, 1)
 	img_shape = (rows, cols, channels)
 	z_dim = 128
 
@@ -61,4 +61,4 @@ def train(plane, depth, label):
 	)
 
 	gan_path = get_model_path(DATASET, MODEL_TYPE, MODEL_NOTE, label)
-	gan.save(gan_path)
+	tf.saved_model.save(gan, gan_path)

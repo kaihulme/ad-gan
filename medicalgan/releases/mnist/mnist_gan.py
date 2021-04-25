@@ -58,4 +58,4 @@ def train():
     )
 
     gan_path = get_model_path(DATASET, MODEL_TYPE, MODEL_NOTE)
-    gan.save(gan_path)
+    tf.saved_model.save(gan, gan_path)

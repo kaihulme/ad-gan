@@ -17,16 +17,21 @@ class DCGAN_OASIS():
 
     def build_generator(self):
         model = Sequential(name="generator")
-        model.add(Dense(256 * 7 * 7, input_shape=(self.z_dim,)))
-        model.add(Reshape((7, 7, 256)))
+
+        model.add(Dense(256 * 44 * 44, input_shape=(self.z_dim,)))
+        model.add(Reshape((44, 44, 256)))
+        
         model.add(Conv2DTranspose(128, kernel_size=3, strides=2, padding='same'))
         model.add(BatchNormalization())
         model.add(LeakyReLU(alpha=0.01))
+        
         model.add(Conv2DTranspose(64, kernel_size=3, strides=1, padding='same'))
         model.add(BatchNormalization())
         model.add(LeakyReLU(alpha=0.01))
+
         model.add(Conv2DTranspose(1, kernel_size=3, strides=2, padding='same'))
         model.add(Activation('tanh'))
+
         if self.show_summary:
             model.summary()
         return model
