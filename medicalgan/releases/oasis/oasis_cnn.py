@@ -8,9 +8,7 @@ from tensorflow.keras.callbacks import EarlyStopping, TensorBoard, ReduceLROnPla
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.optimizers.schedules import ExponentialDecay
 
-from medicalgan.models.architecture.binary_vgg import VGG
 from medicalgan.models.architecture.cnn_oasis import CNN_OASIS
-from medicalgan.models.architecture.cnn_batchnorm import CNN_BatchNorm
 from medicalgan.utils.utils import get_dataset, get_aug_dataset, get_model, get_model_path, get_tb_dir, normround, f1_score
 
 gpu = tf.config.experimental.list_physical_devices('GPU')[0]
@@ -68,7 +66,7 @@ def train(plane, depth):
     loss = BinaryCrossentropy(from_logits=True)
     metrics = [BinaryAccuracy(), AUC(), Precision(), Recall(), f1_score]
 
-    architecture = CNN_OASIS(img_shape, show_summary=True)
+    architecture = CNN_OASIS(img_shape)
     cnn = architecture.cnn
     cnn.compile(
         optimizer=opt,
