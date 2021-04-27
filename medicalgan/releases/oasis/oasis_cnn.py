@@ -4,9 +4,9 @@ import tensorflow as tf
 
 from tensorflow.keras.losses import BinaryCrossentropy
 from tensorflow.keras.metrics import Accuracy, BinaryAccuracy, AUC, Precision, Recall
-from tensorflow.keras.callbacks import EarlyStopping, TensorBoard
+from tensorflow.keras.callbacks import EarlyStopping, TensorBoard, ReduceLROnPlateau
 from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.python.util import nest
+from tensorflow.keras.optimizers.schedules import ExponentialDecay
 
 from medicalgan.models.architecture.binary_vgg import VGG
 from medicalgan.models.architecture.cnn_oasis import CNN_OASIS
@@ -15,11 +15,11 @@ from medicalgan.utils.utils import get_dataset, get_aug_dataset, get_model, get_
 
 gpu = tf.config.experimental.list_physical_devices('GPU')[0]
 tf.config.experimental.set_memory_growth(gpu, True)
-tf.random.set_seed(42)
 
 DATASET = "oasis"
 MODEL_TYPE = "ad_classifier"
-MODEL_NOTE = "32_32_64_64_dropout_70_cnn_sgd"
+MODEL_NOTE = "optimised_cnn"
+
 
 def train(plane, depth):
     """
@@ -41,7 +41,7 @@ def train(plane, depth):
     test_dir = "resources/data/oasis/{0}/{1}/test".format(depth, plane)
 
     # train_data = get_dataset(train_dir, rows, cols, batch_size, label_mode="binary")
-    train_data = get_aug_dataset(train_dir, rows, cols, batch_size, label_mode="binary")
+    train_data = get_dataset(train_dir, rows, cols, batch_size, label_mode="binary")
     val_data = get_dataset(val_dir, rows, cols, batch_size, label_mode="binary")
     test_data = get_dataset(test_dir, rows, cols, batch_size, label_mode="binary")
     
@@ -51,15 +51,23 @@ def train(plane, depth):
         patience=10, 
         restore_best_weights=True,
     )
-    tensorboard = TensorBoard(get_tb_dir(DATASET, MODEL_TYPE, MODEL_NOTE))
+    reducelronplateau = ReduceLROnPlateau(
+        monitor="val_loss",
+        factor=0.9,
+        patience=3,
+        verbose=1,
+    )
+    tensorboard = TensorBoard(
+        get_tb_dir(DATASET, MODEL_TYPE, MODEL_NOTE)
+    )
     callbacks = [earlystopping, tensorboard]
+    # callbacks = [earlystopping, reducelronplateau, tensorboard]
 
-    opt = SGD(learning_rate=1e-5, momentum=0.9, nesterov=True)
-    # opt = Adam(learning_rate=1e-5)
+    expdecay_lr = ExponentialDecay(1e-4, decay_steps=1000, decay_rate=0.95)
+    opt = SGD(learning_rate=expdecay_lr, momentum=0.9, nesterov=True)
     loss = BinaryCrossentropy(from_logits=True)
     metrics = [BinaryAccuracy(), AUC(), Precision(), Recall(), f1_score]
 
-    # architecture = VGG(img_shape)
     architecture = CNN_OASIS(img_shape, show_summary=True)
     cnn = architecture.cnn
     cnn.compile(
@@ -69,19 +77,16 @@ def train(plane, depth):
     )
 
     epochs = 1000
-    # data_length = get_data_length(data_dir)
-    # steps_per_epoch = data_length // batch_size
-    # workers=4
-    # max_queue_size=10
-    # use_multiprocessing=True
+    workers=4
+    max_queue_size=10
+    use_multiprocessing=True
 
     cnn.fit(
         train_data,
         validation_data = val_data,
         epochs=epochs,
-        # steps_per_epoch=1000,
-        # workers=workers,
-        # max_queue_size=max_queue_size,
+        workers=workers,
+        max_queue_size=max_queue_size,
         # use_multiprocessing=use_multiprocessing,
         callbacks=callbacks,
     )

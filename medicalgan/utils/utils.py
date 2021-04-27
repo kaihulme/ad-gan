@@ -86,7 +86,6 @@ def get_singleclass_aug_dataset(data_dir, rows, cols, batch_size, label, shuffle
 def get_singleclass_data(data_dir, rows, cols, label):
     target_dir = os.path.join(os.getcwd(), data_dir, str(label))
     paths = [os.path.join(target_dir, name) for name in os.listdir(target_dir)]
-
     data = np.asarray([img_to_array(load_img(path, color_mode="grayscale", target_size=(rows, cols))) for path in paths])
     labels = np.asarray([label] * len(paths)).astype("uint8")
     return data, labels

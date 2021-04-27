@@ -5,7 +5,8 @@ import medicalgan.releases.adni_alzheimers.adni_alzheimers_cnn as adni_alzheimer
 import medicalgan.releases.oasis.oasis_cnn as oasis_cnn
 import medicalgan.releases.oasis.oasis_gan as oasis_gan
 import medicalgan.releases.oasis.oasis_wgan as oasis_wgan
-import medicalgan.releases.oasis.oasis_transferlearning as oasis_transferlearning
+import medicalgan.releases.oasis.oasis_crossval_cnn as oasis_crossval_cnn
+import medicalgan.releases.oasis.oasis_transferlearning as oasis_transferlearning_cnn
 
 
 def run():
@@ -88,6 +89,8 @@ def run():
             if task == "train_cnn":
                 oasis_cnn.train(plane, depth)
             if task == "train_transferlearning_cnn":
-                oasis_transferlearning.train(plane, depth)
+                oasis_transferlearning_cnn.train(plane, depth)
+            if task == "train_crossval_cnn":
+                oasis_crossval_cnn.train(plane, depth)
             if task == "evaluate_cnn":
                 oasis_cnn.evaluate(plane, depth)

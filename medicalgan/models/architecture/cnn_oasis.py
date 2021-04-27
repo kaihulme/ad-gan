@@ -28,9 +28,9 @@ class CNN_OASIS():
         model.add(BatchNormalization())
 
         # model.add(MaxPooling2D((2, 2), strides=(2,2)))
-        # model.add(Conv2D(128, kernel_size=(3, 3), padding ="same", activation="relu"))
+        # model.add(Conv2D(64, kernel_size=(3, 3), padding ="same", activation="relu"))
         # model.add(BatchNormalization())
-        # model.add(Conv2D(128, kernel_size=(3, 3), padding ="same", activation="relu"))
+        # model.add(Conv2D(64, kernel_size=(3, 3), padding ="same", activation="relu"))
         # model.add(BatchNormalization())
 
         model.add(MaxPooling2D((2, 2), strides=(2,2)))
