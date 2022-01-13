@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{dissertation}[2012/05/04, Daniel Page <Daniel.Page@bristol.ac.uk>]
+\ProvidesClass{dissertation}[2021/05/01, Kai Hulme <kh16747@bristol.ac.uk>]
 
 % =============================================================================
 
@@ -67,6 +67,8 @@
 \RequirePackage{lipsum}
 % http://www.ctan.org/tex-archive/usergrps/dante/dtk
 \RequirePackage{dtklogos}
+% BibLaTeX
+\RequirePackage[backend=biber, style=ieee]{biblatex}
 
 % =============================================================================
 
@@ -76,7 +78,7 @@
 
 % configure hyperref
 
-%\hypersetup{colorlinks=true,bookmarks=false,urlcolor=red}
+\hypersetup{colorlinks=true, urlcolor=red}
 
 % configure algorithm2e
 
@@ -89,13 +91,17 @@
 
 % -----------------------------------------------------------------------------
 
+% figure path
+
+\graphicspath{ {figures/} }
+
 % configure style of table of contents
 
-\setcounter{tocdepth}{1}
+\setcounter{tocdepth}{2}
 
-% configure style of bibliography
+% configure bibliography
 
-\bibliographystyle{plain}
+\bibliography{dissertation.bib} 
 
 % configure style of pages
 
@@ -132,9 +138,9 @@
   \newpage
   \thispagestyle{empty}
 
-  \IfEq{\dissertation@type}{}{}{
-    \adjustbox{padding={5pt},frame={1pt},right}{Dissertation Type: {\dissertation@type}}
-  }
+%   \IfEq{\dissertation@type}{}{}{
+%     \adjustbox{padding={5pt},frame={1pt},right}{Dissertation Type: {\dissertation@type}}
+%   }
 
   \vspace*{\fill}
   \begin{center}

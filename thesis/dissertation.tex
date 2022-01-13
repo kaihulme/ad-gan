@@ -1,0 +1,1456 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%% Kai Hulme, Computer Science BSc Thesis %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[
+    author={Kai Hulme},
+    supervisor={Dr Jon Bird},
+    degree={BSc},
+    title={Generative Adversarial Networks as an Augmentation Technique},
+    subtitle={for Alzheimer's Disease Detection in MRI Volumes},
+    type={Research},
+    year={2021} 
+]{dissertation}
+
+\begin{document}
+
+% =============================================================================
+
+\maketitle
+\frontmatter
+\makedecl
+\tableofcontents
+\listoffigures
+\listoftables
+% \listofalgorithms
+\lstlistoflistings
+
+% -----------------------------------------------------------------------------
+
+\chapter*{Abstract}
+
+In the UK 7.1\% of all people over 65 suffer from dementia, with Alzheimer's disease accounting for over 60\% of cases \cite{prince2014dementia}. Early detection of the neurodegenerative disease can slow or halt its progression \cite{weller2018current} and recent advances in machine learning can aid in this process \cite{tanveer2020machine}. Machine learning techniques for medical image analysis can perform on-par with medical professionals \cite{liu2019comparison}, which reduces the amount of time physicians spend interpreting images and ensures no significant findings go unnoticed.
+\\
+
+Large amounts of training data are required to benefit from such techniques, but are rarely available due to privacy and confidentiality issues. Inadequate data will significantly reduce performance of the detector, which has profound implications in a field where high sensitivity and specificity are required \cite{cho2015much}.
+\\
+
+Generative adversarial networks (GANs) are a deep learning framework proposed by Ian Goodfellow \cite{goodfellow2014generative} consisting of two competing neural networks, able to generate life-like images from a given dataset. In Frid-Adar et al. (2018) \cite{frid2018gan}, GANs were used as a image augmentation technique for increasing CNN performance of liver lesion classification with a small dataset. I aim to apply this method of data augmentation to Alzheimer's disease detection in MRI volumes to see if similar performance improvements are also possible.
+\\
+
+\noindent
+My main contributions for this project are:
+
+\begin{itemize}
+\item Pre-processing of MRI volumes with standard neuroimaging solutions.
+\item CNN method for Alzheimer's disease detection from pre-processed MRI volumes.
+\item Implementation of Generative Adversarial Networks in TensorFlow (Keras).
+\item Exploration of GAN generation of MRI slices as an augmentation technique for improved Alzheimer's disease detection with limited data.
+\end{itemize}
+
+% -----------------------------------------------------------------------------
+
+\chapter*{Supporting Technologies}
+
+\begin{quote}
+\noindent
+\begin{itemize}
+
+\item \textbf{Python} was used as the main programming language for the project, along with base packages such as \textbf{os} and \textbf{xml} for file I/O and XML parsing.
+\item \textbf{NumPy} was used for handling of and calculations in involving vectors and matrices.
+\item \textbf{Pandas} was used for handling of tabular data and CSV files.
+\item \textbf{Matplotlib} was used for data visualisations along with \textbf{Seaborn} for additional functionality.
+\item \textbf{Scikit-Learn} was used for handling of training data, e.g. creation of training sets and cross-validation.
+\item \textbf{OpenCV} was used for image I/O and some image augmentations such as resizing.
+\item \textbf{NiBabel} was used for I/O of medical image formats such as NIfTI and DICOM.
+\item \textbf{NiPype} was used for neuroimaging pre-processing pipelines, wrapping software such as \textbf{FSL}, \textbf{ANTs}, \textbf{FreeSurfer} and \textbf{SPM12} for use in Python. This was used for MRI pre-processing steps such as normalisation and segmentation.
+\item \textbf{TensorFlow} was used for neural networks; models were handled with \textbf{tf.Keras} and dataset tensors with \textbf{tf.Data}.
+\item \textbf{TensorBoard} was used to log and visualise model attributes and training metrics.
+\item \textbf{Docker} was used to manage environments; I used the \textbf{tensorflow-gpu} image for \textbf{TensorFlow} model training on GPU and the \textbf{neurodocker} image for neuroimaging pre-processing with \textbf{NiPype}.
+\item \textbf{VSCode remote-containers} was used to manage \textbf{Docker} containers.
+\item A \textbf{Nvidia RTX2060S} GPU was used for model training with \textbf{CUDA 11.2}
+\item \textbf{Git} was used for version control.
+      
+\end{itemize}
+\end{quote}
+
+% -----------------------------------------------------------------------------
+
+\chapter*{Acronyms}
+
+\begin{quote}
+\noindent
+\begin{tabular}{lcl}
+
+\textbf{Neural networks}\\
+ANN & : & Artificial Neural Network \\
+DNN & : & Deep Neural Network \\
+CNN & : & Convolutional Neural Network \\
+GAN & : & Generative Adversarial Network \\
+ReLU & : & Rectified Linear Unit \\
+LReLU & : & Leaky Rectified Linear Unit \\
+SGD & : & Stochastic Gradient Descent \\
+RMSProp & : & Root Mean Squared Propagation \\
+ADAM & : & Adaptive Moment Estimation \\
+BN & : & Batch Normalisation \\
+\\
+
+\textbf{Model architectures}\\
+DCGAN & : & Deep Convolutional Generative Adversarial Network \\
+WGAN & : & Wasserstein Generative Adversarial Network \\
+CGAN & : & Conditional Generative Adversarial Network \\
+PGGAN & : & Progressive Growing Generative Adversarial Network \\
+\\
+
+\textbf{Statistical metrics}\\
+TP(R) & : & True Positive (Rate) \\
+FP(R) & : & False Positive (Rate) \\
+TN(R) & : & True Negative (Rate) \\
+FN(R) & : & False Negative (Rate) \\
+AUC & : & Area Under the Curve \\
+ROC & : & Receiver Operator Characteristic \\
+\\
+
+\textbf{Medical terms}\\
+MRI & : & Magnetic Resonance Imaging \\
+DICOM & : & Digital Imaging and Communications in Medicine \\
+NIfTI & : & Neuroimaging Informatics Technology Initiative \\
+BIDS & : & Brain Imaging Data Structure \\
+CSF & : & Cerebral Spinal Fluid \\
+MTL & : & Medial Temporal Lobe \\
+MTA & : & Medial Temporal Atrophy \\
+AD & : & Alzheimer's Disease \\
+MCI & : & Mild Cognitive Impairment \\
+CD & : & Cognitively Declined \\
+CN & : & Cognitively Normal \\
+MMSE & : & Mini Mental State Exam \\
+CDR & : & Clinical Dementia Rating \\
+% & \vdots & \\
+
+\end{tabular}
+\end{quote}
+
+% -----------------------------------------------------------------------------
+
+\chapter*{Notation}
+
+\begin{quote}
+\noindent
+\begin{tabular}{lcl}
+
+\textbf{Arrays}\\
+$a$ & : & vector $a$ \\
+$A$ & : & matrix $A$ \\
+$a_i$ & : & element $i$ of vector $a$ \\
+$A_{i,j}$ & : & element $i,j$ of 2D matrix A \\
+$A_{i,j,k}$ & : & element $i,j,k$ of 3D matrix A \\
+$A_{:,i}$ & : & column $i$ of 2D matrix A \\
+$A_{:,:,i}$ & : & slice $i$ of 3D matrix A \\
+\\
+
+\textbf{Functions}\\
+$f(x)$ & : & function $f$ evaluated at $x$ \\
+$f \cdot g(x)$ & : & product of functions $f$ and $g$ evaluated at $x$ \\
+$\frac{\mathrm{d}y}{\mathrm{d}x}$ & : & derivative of y with respect to x \\
+$\int f(x) \, dx \ $ & : & integral of f at x \\
+\\
+
+\textbf{Datasets}\\
+$X$ & : & matrix of training inputs \\
+$y$ & : & vector of input labels \\
+$\hat{y}$ & : & vector of output predicted labels \\
+$x_i$ & : & example $i$ of inputs $X$ \\
+$y_i$ & : & label for example $x_i$ \\
+\\
+
+\textbf{Neural networks}\\
+$W$ & : & matrix of neural network weights \\
+$b$ & : & vector of neural network biases \\
+$\eta$ & : & learning rate \\
+$\phi$ & : & activation function \\
+$\Theta$ & : & trainable parameters \\
+\\
+
+\textbf{GANs}\\
+$G$  &: & generator \\
+$D$ & : & discriminator \\
+$J^G$ & : & generator loss function \\
+$J^D$ & : & discriminator loss function \\
+$\Theta^G$ & : & generator trainable parameters \\
+$\Theta^D$ & : & discriminator trainable parameters \\
+$z$ & : & random noise vector \\
+$x^*$ & : & generator output from random noise vector, i.e. $G(z)$ \\
+
+\end{tabular}
+\end{quote}
+
+% -----------------------------------------------------------------------------
+
+\chapter*{Acknowledgements}
+
+Thank you to Jon Bird for all his help throughout my time working on this thesis.
+
+% =============================================================================
+
+\mainmatter
+
+% -----------------------------------------------------------------------------
+
+\chapter{Contextual Background}
+\label{chap:context}
+
+% --------------------
+
+\section{Introduction}
+
+This chapter begins by outlining the motivations for the project; providing contextual information for the field of study and detailing existing work which has greatly informed this project. The initial proposal is given with expected challenges and intended objectives of the work.
+
+% --------------------
+
+\section{Motivation}
+
+\subsection{Alzheimer's disease}
+
+Alzheimer's disease (AD) is a neurodegenerative condition associated with cognitive decline and memory loss. AD  accounts for over 60\% of dementia cases and predominantly affects the elderly population. Treatment of AD in the USA is estimated to cost 172 billion US dollars annually, with this figure predicted to dramatically increase in response to the increasingly ageing population \cite{zheng2015new}.
+\\
+% https://journals.sagepub.com/doi/full/10.4137/PMC.S13210
+
+Figure \ref{dementia_prevealence} shows the prevalence of dementia in age groups in the UK. Irrespective of gender, it is evident that dementia risk increases dramatically with ageing. Approximately 2 in 100 people have clinical dementia between the ages of 65 and 69; this figure increases to 1 in 5 between the ages 85 and 89. However, 5.2\% of dementia patients in the UK are under 65, illustrating presence of disease in the younger population. With life expectancy increasing by approx. 2-3 years for every 10 years \cite{person_2015}, it is expected that AD will become an ever more prevalent and significant disease in the future.
+\\
+
+\begin{figure}[t]
+\centering
+\fbox{\includegraphics[scale=0.3]{figures/dementia_population.png}}
+\caption{Dementia prevalence by age groups, source: dementiastatistics.org} 
+\label{dementia_prevealence}
+\end{figure}
+% https://www.dementiastatistics.org/statistics/prevalence-by-age-in-the-uk/
+
+The major symptoms of AD include memory loss, disorientation, confusion and difficulties in decision-making. AD symptoms are typically insidious in onset and slowly progressive. Many people affected by AD also experience difficulties with vision and spatial navigation, as well as behavioural changes such as depression, anxiety and irritability \cite{prince2014dementia} .
+\\
+
+AD is caused by neuronal degeneration and death, specifically associated with abnormalities in amyloid-beta and tau proteins. These changes predominantly affect the hippocampus, a region located in the medial temporal lobe (MTL). The hippocampus is involved in memory formation, spatial navigation and pattern recognition; damage to this region consequently results in impairment of these functions, leading to the classical symptoms associated with AD \cite{weller2018current} . 
+
+\subsection{Diagnosis}
+
+Diagnosis of AD is based on a list of clinical criteria covering onset, progression, symptoms and cognitive function, alongside diagnostic neuroimaging typically obtained via magnetic resonance imaging (MRI). Part of the assessment is a mini mental state exam (MMSE), which involves various questions and tests used to assess mental abilities which are typically affected by AD. Performance in this test is combined with the individual's history, behavioural signs, physical exam and diagnostic imaging to reach a clinical dementia rating (CDR). The CDR is graded on a scale of 0-3, detailed in Table \ref{table:cdr_rating_description}. This method of detection is well established and  demonstrates moderate reliability, but has limited ability to detect AD early in the course of disease.
+% https://www.sciencedirect.com/topics/neuroscience/clinical-dementia-rating - table 6.2 in appendix?
+% MMSE questions in appendix?
+
+\begin{table}[t]
+\centering
+\begin{tabular}{|c|l|}
+\hline
+\textbf{CDR} & \textbf{Patient Condition} \\
+\hline
+$ 0 $ & No dementia \\
+$ 0.5 $ & Very mild cognitive impairment \\
+$ 1 $ & Mild cognitive impairment \\
+$ 2 $ & Moderate cognitive impairment \\
+$ 3 $ & Severe cognitive impairment \\
+\hline
+\end{tabular}
+\caption{Description of clinical dementia rating (CDR). \cite{mckhann1984clinical}}
+\label{table:cdr_rating_description}
+\end{table}
+
+\subsection{Treatment}
+
+Current approaches to the treatment of AD are mainly palliative - aiming to reduce symptoms and reduce rate of progression - as definitive treatment remains impossible. There is an overwhelming number of approaches to AD treatment, including drugs such as cholinesterase inhibitors and NMDA antagonists; however, no treatment can guarantee clinical improvement of signs in all patients.  It is therefore very important that AD is diagnosed as early as is clinically detectable to allow multiple intervention attempts, different treatment options and to reduce rate of progression, so allowing optimal patient outcome. 
+
+\subsection{Early detection}
+
+Early detection of AD is hugely beneficial for a number of reasons. Firstly, earlier detection results in improved quality of life for AD patients. It also allows patients to be involved in their treatment and planning decisions, have a more proactive role in their care, and make arrangements for their inevitable cognitive decline as disease progresses. Secondly, if treatment of AD is initiated earlier, this relieves the often demanding responsibilities of the person's care-giver, hence maintaining their ability to provide care and support to the patient; this is especially important considering that sound mental health of the caregiver is associated with reduced rate of institutionalisation of AD patients \cite{todd2009alzheimers}. Finally, earlier detection allows the patient to engage in self-directed cognitive training activities whilst they retain sufficient mental capacity to do so, providing more opportunity to maintain their cognitive function from an early point in disease.
+\\
+% https://touchneurology.com/alzheimers-disease-dementia/journal-articles/alzheimers-disease-the-importance-of-early-detection/
+
+One indication of early AD is the diagnosis of mild cognitive impairment (MCI). Although unclear if an MCI diagnosis is a true diagnosis of early AD, it is known that 30\% of patients with MCI symptoms go on to develop further dementia and AD. Another method for early detection of AD is with machine learning. In Siqi Liu et al. (2014) \cite{liu2014early}, classification of AD, MCI and cognitively normal (CN) was performed on MRI volumes of patients, achieving sensitivity and specificity of $88.57\%$ and $87.22\%$ respectively, showing viability of machine learning approaches to early detection. 
+% https://www.dovepress.com/alzheimers-disease-why-we-need-early-diagnosis-peer-reviewed-fulltext-article-DNND
+% https://ieeexplore.ieee.org/abstract/document/6868045
+
+% --------------------
+
+\subsection{Existing work}
+
+\subsubsection{Machine learning for Alzheimer's disease detection}
+
+State of the art machine learning methods for AD detection such as Siqi et al. \cite{liu2014early} make use of convolutional neural networks (CNNs) to achieve such  a high performance. Approaches such as this use the 3D MRI volume as input for AD detection, which is far more computationally and memory expensive due to the high dimension of the volumes. CNNs are memory hungry \cite{wang2018towards}, but modern GPUs on which these models are trained have memory limitations. A more memory efficient method is therefore required for use with deeper more complex networks to achieve greater performance.
+\\
+% https://ieeexplore.ieee.org/abstract/document/8252752
+
+Jon Bin Bae et al. (2020) \cite{bae2020identification} proposes a method capable of performing AD detection in slices extracted from the MRI volume, allowing use of more complex CNN architectures due to the now 2D input reducing memory usage. The slicing method in based on the studies by Scheltens et al. (1992) \cite{scheltens1992atrophy}, where physicians were tasked with assessing 6 coronal slices across the medial temporal lobe (MTL) for medial temporal atrophy (MTA), as a way to distinguish AD from CN patients, achieving $81\%$ sensitivity and $67\%$ specificity. Jon Bin Bae et al. (2020) uses this approach; MRI volumes were pre-processed and slices across the MTL were extracted and used for CNN training. During testing, the slices for each patient are evaluated and the average of the results is used as the prediction for the subject. This method achieves sensitivity and specificity of $88\%$ and $91\%$ respectively, showing the method's validity and the benefits of deeper 2D CNN models over shallower 3D models.
+% https://jnnp.bmj.com/content/jnnp/55/10/967.full.pdf
+
+\subsubsection{Sensitivity and specificity in medicine}
+\label{sens_spec_in_medicine}
+
+The results from Jon Bin Bae et al. (2020) are indeed promising, but remain limited by the small dataset of under 400 subjects. The medical application of machine learning requires extremely high sensitivity and specificity to be viable due to the sensitive nature of their application; misdiagnosing a patient can lead to life-threatening issues, as well as legal complications. To take AD detection as an example: if a detector deems a patient healthy, but the patient is actually suffering from AD, they will go without treatment until AD is detected at a later stage. As discussed earlier, how early in progression AD is identified is a main factor in the outcome of that patient's treatment. It is clear that any viable Alzheimer's detector must have the sensitivity expected in the medical field, but it is also important to strike a careful balance between sensitivity and specificity to prevent high numbers of false positive results, thus reducing the detector's specificity. 
+
+\subsubsection{Image augmentation}
+
+Truly state-of-the-art applications of CNNs, such as autonomous vehicles, are a result of large amounts of training data - with some models being trained on millions of images. In the medical field, this is often not attainable due to patient confidentiality. A common approach to increase CNN performance without the need for additional training samples is image augmentation.
+\\
+
+Image augmentation involves producing additional training samples by manipulating images with augmentations techniques such as rotation, cropping, shearing and colour-shifting. This technique allows the model to learn the intended underlying distribution of each image, without relying on specifics only present in the limited samples it was shown which may not be present in real world data.
+\\
+
+The issue with image augmentation in the application of AD detection is that it warps and distorts regions of the brain \cite{shorten2019survey}. In standardised MRIs, brain regions appear in precisely the same location between patients, so an AD detector will try to identify abnormalities in these regions of the image. Looking at Figure \ref{mtl_atrophy}, it is easy to understand how a colour shift would affect the detector's ability to distinguish between grey and white matter, how a shear would move the position of structures in the brain, and how a crop could remove important regions from the brain entirely. Given the hemispherical nature of the brain, it is often assumed that a horizontal-flip is a valid augmentation. However, because the left and right hemispheres develop differently in  people with left- versus right-hand dominance, this augmentation would create problems in a sample population with an uneven distribution of left- and right-handed patients \cite{rajeshwari2013efficient}. These issues reduce the ability of the model to detect the subtle differences between AD and cognitively normal (CN) brains, such as medial temporal atrophy (MTA). Improving AD detection performance without increasing the number of training samples requires a method for image augmentation which does not distort structures in the brain.
+
+\subsubsection{GAN-based image augmentation for improved classification of liver lesions}
+
+Generative adversarial networks (GANs) are a deep learning framework proposed by Ian Goodfellow \cite{goodfellow2014generative} consisting of two competing neural networks. One networks, the generator, aims to generate synthetic samples from a given dataset and the other network, the discriminator, aims to discern if the image it is show is real or fake. The generator of well-trained GAN is able to generate life-like images, such as the faces of [https://thispersondoesnotexist.com/]. 
+\\
+
+In Frid-Adar et al. (2018) \cite{frid2018gan}, GANs were used as an image augmentation technique for increasing CNN performance of liver lesion classification. The dataset consisted of 182 computed topography (CT) scans of livers from 3 classes of lesion. Classification with traditional augmentation applied resulted in $78.6\%$ sensitivity and $85.7\%$ specificity. After training and generating synthetic samples for each class as an additional augmentation technique, sensitivity and specificity increased to $85.7\%$ and $92.4\%$ respectively. This shows promising results for the GAN-based augmentation method and the authors believe the method to be transferable to other domains.
+
+% --------------------
+
+\section{Proposal}
+
+As with Frid-Adar et al. (2018) \cite{frid2018gan}, this project aims to use generative adversarial networks as an augmentation technique to improve the sensitivity and specificity of AD detection. The goal of this project is to see if GAN-based augmentation can be applied to the more complex task of improving Alzheimer's disease detection in MRI volumes. 
+\\ 
+
+Using the pre-process and slice method of AD detection employed in \cite{bae2020identification}, MTL slices will be extracted from MRI volumes and used to generate additional synthetic samples of AD and CN slices. This will be a valid method of augmentation to train an AD detector with higher sensitivity and specificity than that which was trained on original data alone.
+
+\subsection{Challenges}
+
+\subsubsection{Lack of data}
+
+Lack of training samples is the downfall of many machine learning models. Without enough data to facilitate learning, the model will fail to generalise during evaluation on new samples, resulting in an unreliable detector. 
+\\
+
+Overcoming this issue with GAN generation is the aim of this project. However, the small number of training samples during GAN training will still present a challenge. Creating a GAN that can generate samples of both the AD and non-AD class from a small dataset where a CNN struggles to perform classification is a challenging task, but one which this project aims to overcome.
+
+\subsubsection{MRI data}
+
+Magnetic resonance imaging is complex and visual noise, artifacts and distortion can be common place in the raw data. For accurate analysis of the MRI volumes, issues have to be corrected in pre-processing.
+\\
+
+Physicians take care to ensure standardisation between patients, \cite{liu2019comparison} but even after aligning each patient in the scanner accurately, the positioning of the brain will be different between patients due to variation in head size and shape. MRI volumes will need to be pre-processed in a way so slices from the same brain regions can be reliably extracted between patients.
+% https://adni.loni.usc.edu/wp-content/uploads/2010/09/ADNI_GeneralProceduresManual.pdf
+% https://ieeexplore.ieee.org/abstract/document/6558127
+
+\subsubsection{Alzheimer's disease detection}
+
+\begin{figure}[t]
+\centering
+\includegraphics[scale=0.4]{figures/mtl_atrophy.png}
+\caption{Coronal slices of the MTL with medial temporal atrophy (MTA) scale ratings. MTA 0: none to minimal; MTA 1: subtle; MTA 2: mild; MTA 3: moderate; MTA 4: severe.}
+\label{mtl_atrophy}
+\end{figure}
+% https://practicalneurology.com/articles/2019-june/brain-imaging-in-differential-diagnosis-of-dementia
+
+An Alzheimer's disease detector able to detect AD from MRI volumes needs to be able to discern whether MRI slices are from an AD or cognitively normal (CN) brain from the image alone. This is no simple task as the differences are quite subtle. Figure \ref{mtl_atrophy} shows various levels of medial temporal atrophy (MTA), a primary indicator of AD \cite{tanveer2020machine}. Given sufficient data, a well-trained AD detector should learn to detect this subtlety; however, a limited dataset poses a significant challenge because the less variation in classes there is, the more difficult classification becomes \cite{cho2015much} .
+
+\subsubsection{Generation of MRI slices}
+
+Numerous papers dedicated to GAN training such as \textit{"How to Train Your DRAGAN"}, Kodali et al. (2017), \cite{kodali2017train} show the current difficulty of training GANs. Issues such as non-convergence in training and over-representation of single classes in generations can give poor results which would not be of use in this intended augmentation application. 
+% https://arxiv.org/abs/1705.07215v3
+\\
+
+Similar concerns arise from close similarity of AD and CN classes as discussed in AD detection challenges. The question here is if the AD detector is unable to accurately discern AD and CN brains, will a GAN be able to produce images from that same training set which are able to represent both AD and CN samples? Traditional augmentation techniques provide positive results in other domains, \cite{rajeshwari2013efficient} so there is hope that GAN-based augmentation can be of benefit here by introducing randomised samples with the same underlying patterns as the original data.
+% https://arxiv.org/abs/1708.06020
+
+\subsection{Objectives}
+
+To implement this GAN-based augmentation of MRI volumes for improved AD detection, a number of objectives which must be met. This objectives shall be used to evaluate final results of the project.
+
+\begin{enumerate}
+    \item Develop a system for Alzheimer's disease detection in MRI volumes.
+    \item Training should be performed on slices of the MTL from training MRI volumes. 
+    \item Implement and train a GAN, capable of generating MRI slices from training volumes.
+    \item Use generated slices to provide augmented training samples for AD detection training.
+    \item The resulting AD detector should outperform that which was solely trained on original training samples.
+    \item An increasing number of generated samples should be added to the training data and the point at which this no longer increases detection performance should be found, i.e. find the optimal number of additional samples to generate.
+    \item Detection performance when trained solely on generated samples should near that of the detection performance when trained solely on original training samples.
+    \item Detection performance on testing samples should be near that of detection performance on training samples.
+\end{enumerate}
+
+% -----------------------------------------------------------------------------
+
+\chapter{Technical Background}
+\label{chap:technical}
+
+% --------------------
+
+\section{Introduction}
+
+This chapter gives background knowledge required to understand the technical implementation of the project described in Chapter \ref{chap:method} and methods for evaluation used in Chapter \ref{chap:critical_evaluation}. 
+\\
+
+Starting with machine learning background, describing concepts used throughout the project such as supervised learning and overfitting. Next is the deep learning background needed for implementation of the neural networks used for Alzheimer's disease detection, followed by CNNs and GANs; the specific deep learning architectures used in this project. 
+\\
+
+Statistical metrics have been used throughout the project to analyse model performance and these concepts are defined here. Intricacies of neuroimaging data are then discussed, finishing with a description of the datasets used in this project.
+
+\section{Machine learning}
+ 	
+Machine learning is a field of artificial intelligence which aims to create models which perform actions from patterns learnt from data rather than implicit instructions. The model aims to learn from \textit{training data}, in order to predict, generate or perform some action when presented with new \textit{unseen data}.
+
+\subsection{Supervised learning}
+\label{supervised_learning}
+
+In supervised machine learning each sample in the training data has a label which describes the data in some desirable way, called the \textit{target label}. This target label is used to teach the model what it is about the data that you want to learn. In a model trained to discern dogs from cats the training data may be images of dogs and cats, each with a target label identifying the image as containing a dog or a cat. A well-trained model would then be able to predict if a given image is a dog or cat.
+
+\subsection{Unsupervised learning}
+
+Unsupervised learning does not require a target label to learn from the data. Without guidance from a target label an unsupervised method cannot predict or classify, instead it aims to represent the data in some way. This could be clustering data into distinct groups, representing the data as a reduced set of its features or detect anomalous entries in a dataset. 
+
+\subsection{Classification}
+
+Classification is a form of supervised learning which concerns itself with predicting the class of a given data entry. Taking the example from Section \ref{supervised_learning}, the classification task is classifying images as dogs or cats; with the class being represented by the target feature.
+
+\subsection{Overfitting}
+
+A model with enough parameters can trivially learn how to explain the data is was trained with by the samples given target labels; but this is not the aim of machine learning. A good machine learning model will be able to make accurate predictions of unseen data from distributions learnt in unseen data which are present in the unseen data. A model which performs well making predictions from training data but poorly when predicting unseen data is a model which has \textbf{overfit}; a model which does not overfit is one which generalises to unseen data well.
+
+\subsection{Underfitting}
+
+When a model is unable to make accurate predictions of the training data it has \textbf{underfit}. This may be because the model has not seen enough training data or lacks enough parameters to represent the data in the desired way.
+
+\subsection{Training, validating and testing}
+\label{train_val_test}
+
+The stages of training a machine learning model can largely be broken down into three steps: \textbf{training}, \textbf{validating} and \textbf{testing}:
+
+\begin{itemize}
+    \item \textbf{Training} is the process of showing the model examples of \textit{training data}. After observing training samples the model will make adjustments to its parameters based on what it has learnt about the data. The aim is not for the model to learn the absolute details of the training data, but learn underlying distributions which are also found in data not yet seen by the model.
+    \item \textbf{Validation} is the process of showing a trained model data it has not yet seen and making a prediction based on what it sees. Comparing the prediction to the expected results gives you an idea of how well the model generalises to unseen data and whether or not it is underfitting. 
+    \item \textbf{Testing} is the final step of building a machine learning model. Once a model has been trained which doesn't underfit or overfit the training data and generalises to the validation data you use a \textit{hold-out testing set} which has not been used at any point in model training or validation. The performance of the model on the testing set should be the best indication of how well the model will perform on real-world unseen data. Testing is done as a separate step after validation as tuning a model to generalise to a validation set can sometimes lead to indirect overfitting of the validation set, causing the model to perform poorly on real world data.
+\end{itemize}
+
+\subsection{Cross-validation}
+
+When creating a validation set to validate a model during training there is an element of bias in how the validation data was taken from the overall dataset. In the extreme case, validation data could be selected exclusively belonging to classes which the model performs well on; resulting in a model which seems to generalise well, but when tested on real world data of all classes it will fail. \\
+
+A better method for creating a validation set is \textbf{stratified sampling} in which the ratio of classes in the sample is the same as the ratio of classes observed in the training data. However this approach to validation still has the risk of \textit{lucky sampling}, where the sampled entries are somehow easier for the model to predict than a normal sample of real world data leading to higher validation performance than performance on real world data. \\
+
+\textbf{Cross-validation} helps to mitigate lucky sampling by validating (and training) all of the training data. It does so by splitting the training data into $K$ equal sized samples called \textit{folds}. The model is then trained $K$ times, each time using a different fold for validation and the remaining folds for model training. This is called K-fold cross-validation. Figure \ref{cv_folds} gives an example for when $K=3$. \\
+
+As mentioned, this reduces the chance of making lucky samples as you will have $K$ different models with K results to compare. From these results you can observe the mean performance to get an accurate indication of real world performance, as well as the standard deviation. A good model will have low variance between folds indicating good performance is not a result of lucky sampling. \\
+
+Stratified cross-validation ensures folds have the same class balance as the original data to reduce variation between folds. An additional step is to shuffle the data before sampling as data may be ordered in some way, resulting in earlier data entries having different underlying distributions as later entries, e.g. if the dataset was ordered by the target feature.
+
+\begin{figure}[t]
+\centering
+\includegraphics[scale=0.5]{figures/cv_folds.png}
+\caption{3-fold cross-validation training steps. In iteration 1, fold 1 is used for validation and 2 and 3 are used for training; iteration 2 uses fold 2 for validation and 1 and 3 for training; iteration 3 uses fold 3 for validation and 1 and 2 for training.}
+\label{cv_folds}
+\end{figure}
+
+\subsection{Parameters and hyperparameters}
+
+When a model is fit to data it alters its own parameters. For example, a decision tree classifier aims to describe data by constructing a tree of conditional statements which when given data can be used to make a prediction of the class. During training the conditional statements are altered to better fit the training data; these are the model's parameters. The more parameters a model has the more complex relationships it can find in the data. \\
+
+When training a model you want to ensure it neither overfits nor underfits. This is possible by simply having enough data, but this is often not possible and so we must turn to tuning the model's hyperparameters. These parameters change the way the model is constructed, often increasing or decreasing the number of parameters in the model or changing how the data changes the parameters. \\
+
+Taking the decision tree example again, a tunable hyperparameter is the maximum depth the decision tree can grow to. If the model is overfitting you may decrease the the maximum depth to reduce the number of parameters in the model forcing it to learn stronger patterns in the data. Conversely, you may increase the depth if the model underfits. \\
+
+Hyperparameters can be tuned manually by training, validating and changing them based on the results but this is time consuming. A better way is to use a grid search, where a parameter space is defined with each parameter you wish to test, and the model is trained on each permutation of the parameter space returning the model parameters which gave the best result. A random search works similarly, but trains using a random sample of the parameter permutations which is a better choice when there are is a large parameter space to search. Often these methods are done in conjunction with cross-validation for best results.
+
+% --------------------
+	
+\section{Deep learning}
+
+Deep learning is a subset of machine learning methods which concerns itself with the study of artificial neural networks (ANNs). The field of deep learning has been able to achieve complex feats from real-time voice interaction with your phone to autonomous vehicles becoming a real possibly. The models behind these solutions have largely been due to ANNs ability to learn highly complex patterns in massive amounts of data. The field has seen explosive growth in recent years due to the increases in data availability and constant improvements in computational speeds.
+	
+ \subsection{Biological neurons}
+
+ANNs were originally inspired by the brain and the way complex networks of neurons communicate to give birth to life as we know it today. It makes sense to look at biological neurons before discussing their artificial counterparts to see where the similarities lie. \\
+
+\begin{figure}[t]
+\centering
+\fbox{\includegraphics[scale=0.4]{figures/neuron_anatomy.png}}
+\caption{Anatomy of a biological neuron. Source: \cite{geron2019hands}}
+\label{neuron_anatomy}
+\end{figure}
+% https://en.wikipedia.org/wiki/Neuron
+
+Figure \ref{neuron_anatomy} shows the anatomy of a biological neuron. The cell body of a neuron is called the soma; this is the brain of the neuron and where the computation occurs. Signals from other neurons, in the form of action potentials, are input into the soma along the neuron's dendrites. If the sum of the action potentials reaches a threshold value another action potential is sent along the neuron's axon to be received by other neurons. \\
+
+Hebb's rule famously states that \textit{"neurons that fire together, wire together"}. This is a simplification of the observation that neighbouring neurons which often excite action potentials in one-another will strengthen their axonal connection. This results in a stronger action potential sent to the receiving neuron in a process called Hebian learning. \\
+
+This may seem like simple computation, but with around $10^{11}$ neurons in the human brain these processes of Hebbian learning and neuronal communication are what give us our ability to form memories and complete complex tasks which today are thought impossible for the machines.
+		
+\subsection{Artificial neural networks}
+
+An artificial neural network (ANNs) is a machine learning model which is at the core of deep learning. ANNs can take many forms, but generally consist of a large network of artificial neurons making many simple computations which when combined are able to solve massively complex problems; not dissimilar from the simple neurons making up our own brains.
+
+\subsubsection{Neurons and layers}
+
+Neurons in ANNs are similar to those in our brain. A neuron has a number of input signals, each with a weighting and a bias. The input signals are weighted and biased and their output is the result of a function called the \textit{activation function}. This works similarly to the thresholding in a biological neurons soma, but the computation can take many forms. \\
+
+Neurons in an ANN are organised in layers. You may have many neurons in a layer, and many layers of neurons working together in the network. The input to the network is an \textit{input layer} of $N$ neurons, where $N$ is the number of input features. There are then a number of additional \textit{hidden layers} which perform computation on their inputs and passing their outputs to the next layer. The final \textit{output layer} gives the resulting computation from the network. \\
+
+The following equation computes the outputs of each node in a layer from the inputs of the previous layer \cite{geron2019hands}:
+
+\[ h_{W,b}(X)=\phi(XW+b) \]
+
+\begin{itemize}
+\item $\phi$: the activation function applied to the weighted and biased inputs.
+\item $X$: the matrix of input features from the previous layer.
+\item $W$: the matrix of weights between the input and receiving neurons.
+\item $b$: the bias vector, containing the bias term for each neuron.
+\end{itemize}
+
+\subsection{Activation functions}
+
+It is common place to use different activation functions for specific tasks, here are some used throughout the project.
+
+\subsubsection{sigmoid}
+
+The sigmoid activation function is often used as the output activation function for a binary classification problem, as the range of possible results is bound between $0$ and $1$. It is calculated as follows:
+
+\[ \sigma(x)=\frac{1}{1+e^{-x}} \]
+
+\subsubsection{tanh}
+
+The hyperbolic tangent (tanh) can be used similarly to the sigmoid activation function, but its outputs will be bound between $-1$ and $1$ which some problems can benefit from. It is calculated as follows:
+
+\[ tanh(x)=\frac{e^x-e{-x}}{e^x+e^{-x}} \]
+
+\subsubsection{ReLU}
+
+The rectified linear unit (ReLU) activation function is far simpler than the sigmoid function; it is simply the maximum of the input or 0. Its simplicity means it is fast to compute and has become the default choice for activation functions of hidden layers in many ANNs. It is calculated as follows:
+
+\[ ReLU(x)=max(0,x) \]
+
+\subsubsection{LeakyReLU}
+
+The ReLU activation function is a good default and often performs well, but in some networks it can result it many neurons never firing as a result of it being a function of $max(0,x)$. One solution to this problem is the leaky rectified linear unit (LeakyReLU), which works in much the same way as ReLU but gives a small negative value rather than 0. It is calculated as follows:
+
+\[ LeakyReLU_\alpha(x)=max(\alpha x, x) \]
+
+The value $\alpha$ is generally small and controls the amount of `leak` in the activation function. Figure \ref{leakyrelu} shows the LeakyReLU activation function around $x=0$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[scale=0.4]{figures/leaky_relu.png}
+\caption{LeakyReLU activation function around $x=0$. Source: \cite{geron2019hands}}
+\label{leakyrelu}
+\end{figure}
+
+\subsection{Loss}
+
+Loss is a metric used in neural networks to calculate model performance, comparing the expected and actual output.
+
+\subsubsection{Binary cross-entropy}
+
+In this project I treat Alzheimer's disease detection as a binary classification problem and use binary cross-entropy to calculate the loss from a binary classifier. Binary cross-entropy, or log-loss is defined as follows:
+
+\[ loss = \frac{1}{N} \sum_{i=1}^{N} y_i \cdot + (1-y_i) \cdot log(1 - \hat{y_i}) \]
+	
+\subsection{Loss optimisation}
+
+\subsubsection{Stochastic gradient descent}
+
+As the loss function in a neural network is so complex is it often intraceable and so estimations must be made. Stochastic gradient descent (SGD) is one of the most common loss optimisation methods and works by estimating a subset of loss gradients rather than finding true derivatives. There is a trade-off where SGD is not guaranteed to find the optimal path towards a minima, but the benefit is fast gradient calculations.
+
+\subsubsection{Momentum}
+
+Momentum changes the rate at which gradient descent occurs. The greater the gradient the faster the optimiser will accelerate in the direction of the minima. Nesterov momentum makes a slight modification to this, measuring the loss gradient at a point just ahead in the direction of the momentum, meaning the optimiser ends up being ahead of where it would have been with normal momentum which can result in faster convergence. Adaptive moment estimation (Adam) optimisation uses previous gradient information to dynamically change momentum during optimisation.
+	
+\subsection{Training neural networks}
+
+Feed-forward ANNs are trained in an iterative two-step process. First a forward propagation where an input is fed through the network; the input layer receive the input, it is then sent to the first hidden layer and the output of that is sent to the next and so on, until the result of the output layer is output and the and a loss metric is calculated. \\
+
+Then in backpropagation the training method works backwards from the output layer, calculating the contribution of each node in the previous layer to the loss using the chain rule. This process of calculating the loss contributions of the previous layer propagates backwards through the network to the input layer where the loss optimiser calculates weight and bias adjustments for each of the neuron connection from the calculated error gradients. \\
+
+The forward and back propagation make up one epoch and training is repeated for a set number of epochs or until loss optimisation converges on a minimum solution.
+
+\subsubsection{Learning rate}
+
+The learning rate of an optimiser decides the rate at which it will head towards a better solution - higher learning rates will move faster through the solution space, but may take steps which are too big and miss good solutions. Learning rate scheduling can be used to decrease learning rate throughout training; whether it be at each epoch or whenever there is a plateau in training progression, with the idea being a fast learning rate can close in on an area of the space with low loss then slow down and refine the search.
+
+\subsubsection{Early stopping}
+
+Neural network training repeats for a number of epochs. If training continuous for too long it can lead to overfitting and also wastes unnecessary time. Early stopping can be used to monitor a metric at the end of each epoch and decide whether training should continue. A common method is to check the loss of a validation set each epoch and stop once it plateaus.
+	
+\subsubsection{Vanishing gradients problem}
+
+During backpropogation loss function gradients are minimised by the loss optimiser. Throughout the layers gradients get smaller and smaller and as training progresses if they get too small it can slow down training. This can occur before the network has converged on a good solution leading to poor results.
+	
+\subsection{Overfitting in neural networks}
+
+Large neural networks can have millions (or billions) of trainable parameters meaning they can solve very complex problems. However, this means there can be enough parameters for the network to simply learn to map each specific training sample to their class labels. This means overfitting can common in neural networks and regularisation techniques must be applied to aid generalisation.
+
+\subsubsection{Dropout}
+
+Dropout \cite{dropout2014} is a regularisation technique applied to a layer of nodes in which a random sample of the nodes are ignored for that training epoch. The idea is the network can't rely on specific nodes too heavily which results in them being less sensitive to slight changes in input resulting in better generalisation. 
+
+\subsubsection{Batch normalisation}
+
+Neural networks are trained with batches of the training set. Depending on the task (and hardware) a larger batch size may not fit in memory so it can be useful to train with smaller batch sizes, but larger models can help fully utilise processing power. Smaller batch sizes can also help models training stability and generalisation. \\
+
+Batch normalisation is a function which normalises the output of a layer for a given batch to give it zero mean and unit variance. It is similar to scaling of a dataset but works on a networks hidden layers - the effect of this is a reduction in vanishing gradients and acts as a regularisation technique.
+	
+% --------------------
+
+\section{Convolutional neural networks}
+
+\subsection{Convolutions}
+
+A convolution is an image processing technique which applies a kernel filter to each pixel in an image. The kernel is simply a matrix of values to be convolved with the target pixel. Simple kernel filters can perform transformations such as edge-detection, blurring, sharpening etc.
+
+\subsection{CNNs}
+
+Convolutional neural networks (CNNs) are image-specific neural networks which consist of convolutional layers. Each layer is made up of a number of kernel filters which take a 2D input. During training the values in the filters change depending on what the network requires. \\
+
+The filters can only 'see' a small part of their input which forces them to learn low-level features (e.g. line detection). As the layers are combined each node sees a small area of the output from the previous layer. This results in layers of kernels forming complex feature maps able to learn complex patterns in the images.
+
+\subsection{Transfer learning}
+\label{transfer_learning}
+
+To a neural network most images look largely the same: shapes, lines etc. so CNNs will usually have similar low level feature maps. We can benefit from this by using the input and a number of hidden layers (including weight and biases) of a model trained on another dataset and add our own output layer. Training from here gives the model a head-start and can be useful when there is limited training data.
+	
+% --------------------
+	
+\section{Generative adversarial networks}
+
+GANs consist of two neural networks: one generator and one discriminator. The generator aims to generate images from a random noise vector input which look indistinguishable from the images in the dataset it was trained with. The aim of the discriminator is to decide, given one real sample and one generated sample, which image is real. They are trained in a way in which they compete with one another with the generator learning to fool the discriminator and the discriminator learning what makes the real images look real. The result is a generator network which can generate realistic images from the dataset with added randomness that makes them unique.
+
+\subsection{Training GANs}
+
+GAN training requires custom training logic to train both the discriminator and generator networks simultaneously, shown in Figure \ref{gantrainloopdiag}. The GAN network is trained batch-by-batch, first the discriminator $D$:
+
+\begin{enumerate}
+    \item create a batch of random latent spaces $z$
+    \item predict $G(z)$ to generate images $X^*$
+    \item evaluate $D(X)$ and $D(X^*)$ to get real / fake predictions
+    \item calculate discriminator loss $J^D$ for predictions and update $\Theta^D$
+\end{enumerate}
+    
+Then the generator $G$:
+
+\begin{enumerate}
+    \item create a batch of random latent spaces $z$
+    \item predict $G(z)$ to generate images $X^*$
+    \item evaluate $D(X^*)$ to get real / fake predictions
+    \item calculate generator loss $J^G$ for predictions and update $\Theta^G$
+\end{enumerate}    
+
+This process is repeated for each batch in the training set then repeated for each training epoch.
+
+\begin{figure}[t]
+    \label{gantrainloopdiag}
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/gan_training.png}
+    \caption{GAN training loop. Diagram inspired by book "GANs in Action", Langr Bok}
+\end{figure}
+
+\subsubsection{GAN training problems}
+\label{gan_training_is_difficult}
+
+GANs are notoriously difficult to train, with many common issues to overcome which are often more difficult to account for than problems with feed-forward networks. One problem is mode-collapse, where the GAN's generator is able to generate realistic samples, but there are only a few of them - there is not much variance between them. What this looks like is the same image being generated no matter the input noise vector. Noise and artifacts in generated images are common place in poorly trained GANs as well and can be difficult to solve. As two networks are being trained simultaneously memory limitations can limit the size of the networks, as well as the size of generated images.
+
+% --------------------
+
+\section{Statistical metrics}
+
+To test model reliability there are a number of important statistical metrics we must define. As this project is largely focused on detecting Alzheimer's disease, models shall be performing binary classification $(0: CN, 1:AD)$ and metrics shall analysing that performance.
+
+\subsection{Accuracy}
+
+Accuracy is the simplest of metrics, calculated as the percentage of correct predictions from the total number of predictions. A higher accuracy indicates a better model, but not necessarily a good model. \\
+
+Take for example a model which aims to detect if a patient is at risk of falling ill from a rare disease. Approaching this as a binary classification problem; we have patients being healthy as $0$ and falling ill as $1$. A terrible implementation of a model would simply predict $0$ for all patients as it knows the disease is rare. This may sound like an inaccurate model, but if only 1 in 10000 patients are at risk of falling ill from the disease then this model achieves an accuracy of 99.99\%! It is evident that better metrics are required. \\
+
+\subsection{True positive}
+
+A true positive (TP) is a when a model correctly makes a positive prediction. For example, predicting a patient will fall ill and they do fall ill; TPs must be maximised so all patients who require treatement receive it.
+
+\subsection{True negative}
+
+A true negative (TN) is a when a model correctly makes a negative prediction. For example, predicting a patient will be healthy and they are healthy; high TNs are good as it means treatment is not wasted on healthy patients.
+
+\subsection{False positive}
+
+A false positive (FP) is a when a model incorrectly makes a positive prediction. For example, predicting a patient will fall ill when they are healthy; this is not ideal as a patient who doesn't require treatment will receive it, but depending on the extend of the treatment this is likely not too much of an issue for the patient.
+
+\subsection{False negative}
+
+A true negative (FN) is a when a model incorrectly makes a negative prediction. For example, predicting a patient will be healthy and they fall ill; FNs must be minimised at all costs as incorrectly predicting someone will be healthy results in a patient not getting the help they need.
+
+\subsection{Confusion matrix}
+
+A confusion matrix is a way to visualise a classifiers TPs, TNs, FPs and FNs to quickly get an idea of classification performance. Figure \ref{confusion_matrix} gives an example.
+
+\begin{figure}[t]
+\centering
+\includegraphics[scale=0.6]{figures/confusion_matrix.png}
+\caption{An example confusion matrix showing classification results of disease detection of a population of 10000 with 1\% ill patients. From the confusion matrix we can see 97\% of ill patients were classified correctly and 90\% of healthy patients were classified correctly. Most importantly only 3 patients out of the population of 10000 were predicted healthy when they were not. There are 936 FPs, but this is common for medical classification problems as it preferable to have more FPs to decrease FNs.}
+\label{confusion_matrix}
+\end{figure}
+
+\subsection{Precision}
+
+Precision describes the proportion of correctly classified positive samples to the total number of positive samples, calculated as follows:
+
+\[ precision = \frac{TP}{TP + FP} \]
+
+\subsection{Recall}
+
+Precision describes the proportion of positive samples to the total correctly classified positive samples, calculated as follows:
+
+\[ recall = \frac{TP}{TP + FN} \]
+
+\subsection{F-score}
+
+$F_1$-score aims to find a balance between precision and recall metrics, by way of calculating their harmonic mean:
+
+\[ F_1 = 2 \cdot \frac{precision \cdot recall}{precision + recall} \]
+
+$F_1$-score is an instance of the generalised $F_\beta$-score, where $\beta=1$. The $F_\beta$-score is calculated as follows:
+
+\[ F_\beta = (1 + \beta^2) \cdot \frac{precision \cdot recall}{(\beta^2 \cdot precision) + recall} \]
+
+$F_2$-score is a useful metric when you are more concerned with optimising recall as it weights recall higher; conversely $F_0.5$-score will weight precision higher. These can be used if you have unbalanced classes, or want to optimise for classifying the positive or negative class.
+
+% --------------------	
+
+\section{Magnetic resonance imaging}
+
+Magnetic resonance imaging (MRI) is a non-invasive form of medical imaging used to produce 3D anatomical volumes, often used for detection and diagnosis of diseases. As the name suggests MRIs use magnets; producing a magnetic field which causes protons in water found in the body to align in that field. Firing a radio-frequency current at the desired area charges the protons causing them to move out of alignment with the magnetic field. MRI sensors are able to monitor the time it takes protons to realign with the magnetic field and the amount of energy released. \cite{weller2018current} \\
+% https://www.nibib.nih.gov/science-education/science-topics/magnetic-resonance-imaging-mri
+
+When taking an MRI of the head: bone, grey matter, white matter, cerebral spinal fluid (CSF) and bone all have different properties and so protons within these regions act differently to the radio-wave pulses of the MRI. This means the MRI can discern between different parts of the brain, giving a clear 3D volume of the brain which can be used to help detect diseases such as Alzheimer's. MRIs can be either T1 or T2 weighted, with resulting in areas such as bone and fat being highlighted differently in the image.
+
+\subsection{MRI data}
+
+The data from MRIs is represented as a 3D volume. A common file format for MRIs is NIfTI (neuroimaging informatics technology initiative), but can also come in the form of multiple DICOM (digital imaging and communications in medicine). These formats can easily be represented in matrix form, as a 3D array. Each pixel in an MRI, or element in the array, is called a \textit{voxel}. The size of a voxel determines the thickness of slices in each plane.
+
+\subsubsection{Planes}
+
+An MRI scan produces a 3D volume and can be viewed as such but it often makes sense to view 2D slices at various depths to view internal structures of the brain. Volume can be sliced in the sagital, coronal or transverse planes as shown in Figure \ref{mri_planes}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[scale=0.4]{figures/mri_planes.png}
+\caption{MRI planes: transverse (left), sagital (centre) and coronal (right). Source: \cite{ayers2019brain}
+\label{mri_planes}}
+\end{figure}
+% https://sites.google.com/site/postgraduatetraining/image-acquisition/the-basics?tmpl=%2Fsystem%2Fapp%2Ftemplates%2Fprint%2F&showPrintDialog=1
+
+\subsection{Pre-processing}
+
+MRIs are complex machines, often subject to noise and distortion, but differences in the machines themselves can result in results depending on where the scan was taken. Volumes can have varying spatial resolution, pixel brightness can differ between subjects, heads can be off-centre and each subjects brain is inherently a different size and shape. Medical professionals are highly-skilled in image analysis allowing them to account for this variability, but for quantitative methods such as deep learning to accurately analyse this complex data pre-processing steps must be applied.
+
+\subsubsection{Re-sampling}
+
+Often re-sampling of the volume is applied to fit 1x1x1mm voxels as a step before other pre-processing functions. 
+
+\subsubsection{Normalisation}
+
+Differences in human physiology means that each person's brain is a different size and shape which results in brain regions occupying a different space in the 3D volume between patients. As medical image analysis often involves looking at particular brain regions such as the MTL for AD detection, it would be beneficial for structures in the brain to be normalised across all subjects allowing for the same region to be extracted from each subject in a study with ease. \\
+
+Normalisation is a pre-processing method which aims to solve this issue, allowing for the brain of each subject in a study to be warped, fitting a template. This results in a set of volumes where the spatial location of brain regions in similar between subjects, meaning particular depth slices in each plane contain the same brain structures between each subject.
+
+\subsubsection{Skull-stripping}
+
+As seen in Figure \ref{mri_planes}, the skull appears as a bright white shell surrounding the brain in an MRI. It is often beneficial to remove the skull from an MRI volume to reduce the complexity of this image. This can be done through a process called skull-stripping, provided by neuroimaging pre-processing libraries such as FSL.
+
+\subsubsection{Brain extraction}
+
+In a similar process to skull-stripping, brain extraction pre-processing results in an MRI volume which includes only key regions such as the cerebrum, cerebellum, brain stem and cerebral spinal fluid (CSF). The main differences between skull-stripping and brain extraction are the removal of non-brain regions such as the eyes and cheeks which can be seen in the lower left corner and lower third of the sagital and coronal slices. A volume containing only the brain makes for easier analysis as automated methods will not mistakenly analyse differences in non-brain regions.
+
+\subsubsection{Segmentation}
+
+Grey and white matter and CSF are often subject to analysis in neuroimaging. It can be beneficial to apply image segmentation to these regions to ease analysis. This involves reducing the pixel values in the volume to 4 unique values: one for background (non-patient), one for grey matter, one for white matter and another for CSF.
+
+\subsection{Alzheimer's disease in MRIs}
+\label{ad_in_mris}
+
+Alzheimer's disease affects the brain predominately in the medial temporal lobe via neuronal death in structures such as the hippocampus. Neuronal damage presents itself in the form of grey and white matter atrophy and can be observed in patients suffering from AD \cite{weller2018current}. As discussed in Chapter In Scheltens et al. (1992) \cite{scheltens1992atrophy} , physicians were tasked with with discerning AD and CN subjects given a sample of coronal slices covering the MTL. Physicians looked for MTA as a way of detecting damage from AD and achieved a sensitivity and specificity of $81\%$ and $67\%$ respectively showing some viability to AD detection from medical imaging alone. This study suggests that the coronal view of the MTL may be the best option for slicing volumes when aiming to detect AD in 2D slices.
+
+% https://pubmed.ncbi.nlm.nih.gov/20061634/
+% https://jnnp.bmj.com/content/jnnp/55/10/967.full.pdf
+	
+% --------------------
+		
+\section{Data}
+
+This section details the MRI data used in the project.  
+
+\subsection{OASIS}
+
+The OASIS-1 dataset contains data from a cross-sectional study of 416 right-handed men and women aged 18 to 96 each subject has 3 to 4 T1-weighted MRI scans. The right-handedness of the subjects is an important detail due to differences in left and right cerebral hemispheres in left and right-handed people. 100 of the subjects were clinically diagnosed with very mild to moderate AD and the remaining subjects determined CN.
+
+\subsubsection{MRI volumes}
+
+A number of MRI volumes are provided for each subject:
+
+\begin{itemize}
+    \item 3-4 individual raw MRI volumes
+    \item Co-registered volume of individual volumes, re-sampled to 1x1x1mm voxels.
+    \item Template registered, gain corrected, brain-masked version of above volumes.
+    \item Brain extracted grey / white / CSF segmentation of volume normalised to template with FSL software. 
+\end{itemize}
+
+\subsubsection{Metadata}
+
+Along with the subject MRI data, a comma separated value (CSV) file of patient metadata is provided. This metadata provides medical assessments of the subjects in the cross-sectional study; of particular interest is the CDR as this indicates which of the subjects suffer from AD.
+
+% \subsection{Other datasets}
+
+% Possibly talk about other datasets used.
+
+% \begin{itemize}
+% \item MNIST
+% \item ADNI
+% \end{itemize}
+
+
+% -----------------------------------------------------------------------------
+
+\chapter{Method}
+\label{chap:method}
+
+% --------------------
+
+\section{Introduction}
+
+This chapter describes the methodology and testing that went into the implementation of the method. I have opted to include testing as part of this section as I took an iterative approach to development: implementing simple working models, analysing results and making further improvements. Hence, this chapter reads as a step-by-step guide through my implementation process, concluding with final results from my best implementation followed by my critical evaluation in Chapter \ref{chap:critical_evaluation}. \\
+
+Although development was iterative, there were key steps in implementation and this chapter will be structured accordingly:
+
+\begin{itemize}
+
+    \item I start with an overview of the intended method for detection of AD in MRI volumes and generation of additional MRI slices for improved detection performance; giving a data pipeline and describing model training methods.
+    
+    \item Following this, I describe the methods in which the OASIS dataset was handled, allowing me to turn MRI volumes and patient metadata into a suitable format for AD classification, as well as detailing the model training process.
+    
+   \item The following sections describe the process of building an AD classification model. I detail my initial failed attempts, which revealed the need for MRI pre-processing, and discuss the implementation of a pre-processing pipeline. Using these results, I then built and optimised a new classification model with an improved evaluation method based on VGG16. 
+    
+    \item Once the baseline classification results were gathered, I implemented a GAN model for image generation. I began by generating simple MNIST images, before improving my model to generate additional slices from MRI volumes. I then conclude the chapter by analysing AD detection results using varying amounts of additional generated data, therefore implementing the generation as augmentation technique described in Frid-Adar et al. (2018) \cite{frid2018gan}.
+    
+\end{itemize}
+
+% --------------------
+
+\section{Implementation overview}
+
+This section gives a high-level implementation overview in the form of data pipelines. I also discuss methods used for deploying models to a graphics processing unit (GPU) with Docker and training data pipelines to optimise memory and training time.
+
+\subsection{Data pipeline}
+
+Figure \ref{data_pipeline} shows the data pipeline for a high-level overview of the system. Training data is used to train the GAN, the generator is then sampled to create a set of generated images and these are pooled with the training data to create a larger set of training images for the CNN classifier.
+
+\begin{figure}[t]
+    \label{data_pipeline}
+    \centering
+    \fbox{\includegraphics[width=0.95\linewidth]{figures/data_pipeline.png}}
+    \caption{Data pipeline showing method for GAN-based image augmentation.}
+\end{figure}
+
+\subsection{GPU training}
+\label{gpu_training}
+
+Deep neural network architectures, such as CNNs and GANs, require a lot of memory and processing power to allow training. Using frameworks such as TensorFlow we can offload model training to a GPU which often improves training time due to their superior performance in operations such as matrix multiplications which are common place in model training.
+
+\subsubsection{Docker}
+
+Docker is a platform for managing development containers. Containers make use of Linux kernel virtualisation capabilities to provide similar functionality to virtual machines (VMs), but are lighter weight as they do not require an entire operating system (OS) instance or hypervisor - only using processes required for the project. Containerisation allows for project dependencies to be setup independently of system setup, which is particularly useful for the configuration of CUDA and TensorFlow for accelerated training of neural network models on GPUs. \\
+
+To setup the development environment for this project I used the tensorflow-gpu image for TensorFlow model training on GPUs and the neurodocker image for neuroimaging pre-processing with NiPype. I also used the VSCode remote-containers extension for management of development environments.
+
+\subsubsection{Training pipeline}
+
+Figure \ref{gpu_training_single} shows a standard timeline for model training using a GPU:
+
+\begin{enumerate}
+    \item Before training begins, pre-processing is applied to the training batches. Pre-processing at this stage involves image resizing and pixel normalisation, but other augmentation techniques such as flipping, cropping and rotation could be applied.
+    \item The CPU then loads a batch for the GPU. 
+    \item The model is trained on the GPU with the batch.
+    \item A training epoch ends once all the model has trained on all batches.
+    \item Steps 2 and 3 are repeated for the desired number of training epochs. If pre-processing is randomised with each epoch, e.g. a random amount of rotation for each image, then step 1 must be repeated also.
+\end{enumerate}
+
+\begin{figure}[t]
+\centering
+\fbox{\includegraphics[scale=0.5]{figures/gpu_training_single.png}}
+\caption{Standard GPU batch training timeline.}
+\label{gpu_training_single}
+\end{figure}
+
+As model training is offloaded to the GPU, this leaves the CPU free during model training. To optimise processing we can parallelise steps 2 and 3, using this time to load the next training batches and perform any pre-processing steps whilst the GPU trains the current batch. This gives the timeline shown in \ref{gpu_training_multi}. \\
+
+\begin{figure}[t]
+\centering
+\fbox{\includegraphics[scale=0.5]{figures/gpu_training_multi.png}}
+\caption{GPU batch training with multiprocessing timeline.}
+\label{gpu_training_multi}
+\end{figure}
+
+This is particularly useful when using small batch sizes where GPU training time for batches is relatively short. If the GPU had to wait at the end of each batch for the next batch to be processed there would be a lot of idle GPU time relative to GPU processing time. This problem gets worse when more pre-processing steps are added. \\
+
+The implementation of this training pipeline was achieved by using the Keras pre-processing method
+$image\_dataset\_from\_directory$ to create a $tf.Data$ object allowing batches of images to be loaded from storage and pre-processed whilst the GPU is fed a constant stream of training batches. In practice this method fills a buffer of training batches so the GPU has batches available if a batch fetching round takes an unexpectedly long time; a buffer size of 10 batches was used in my implementation. This is achieved via the $fit$ method of a Keras model shown in Listing \ref{keras_model_fit}. \\
+
+\begin{lstlisting}[float={t},language=Python, caption={Keras model fit function for parallelising batch fetching and training with a batch buffer. train\_data is a tf.Data object which fetches batches of images from a given directory. During training the maximum number of CPU threads available will work on fetching and pre-processing batches of images to fill a queue of 10 batches whilst the GPU trains on each batch in the queue. An epoch completes once training has been completed on all batches. At the end of an epoch the model is evaluated on the validation data.}, label={keras_model_fit}]
+model.fit(
+    train_data,
+    val_data,
+    epochs=num_epochs,
+    workers=-1,
+    use_multiprocessing=True,
+    max_queue_size=10,
+)
+\end{lstlisting}
+
+Using this method GPU utilisation during training of the CNN model described in Section \ref{initial_ad_detection} increased from under $10\%$ to over $95\%$ when compared to the unparallelised method described in Figure \ref{gpu_training_single}.
+
+% --------------------
+
+\section{Data handling}
+
+The OASIS dataset is structured in the brain imaging data structure (BIDS) format \cite{marcus2007open}, so some handling of the files is necessary before it can be used to train a TensorFlow model for AD classification.
+% https://bids.neuroimaging.io/
+
+\subsection{Metadata}
+
+Alongside the MRI data a CSV file of subject metadata is given. The file \textit{oasis\_cross-sectional.csv} contains the a number of features; of importance here are the patient ID and CDR. Using Pandas data frames to analyse the CDR feature I gathered that there were 135, 70, 28 and 2 subjects with CDRs of $0$, $0.5$, $1.0$ and $2.0$ respectively. There are 201 CDR entries missing from the metadata, but from the OASIS data description there are 100 subjects in the study with a CDR of $0.5$ and over, so we can assume all missing values are for a CDR of $0.0$.\\
+% https://oasis-brains.org/
+
+As per the OASIS-1 study, subjects with a CDR of $0.5$ and above suffer from AD. For the remaining subjects, I decided to drop the subjects with missing CDR ratings and take a random sample of the subjects with a CDR of $0.0$ as to have balanced classes for the remainder of the project. Using this I generated lists of subjects: one for subjects with AD and one for CN subjects. 
+% https://watermark.silverchair.com/jocn.2007.19.9.1498.pdf?token=AQECAHi208BE49Ooan9kkhW_Ercy7Dm3ZL_9Cf3qfKAc485ysgAAArAwggKsBgkqhkiG9w0BBwagggKdMIICmQIBADCCApIGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMKvEyZaWELx8XfDvTAgEQgIICYx65YM2BVj554j-k386RI_f7tsmhdjJ9rnZfAr1HR1m6-Aa6TNURMBGc_wvAPLWH6l-D7YD-J6CsFpkCDS6oNoHLqQIJxU6AgZA8Q-ybjekaodkKGFvPKPJ23bSyb3vDwaf8JQN-8SU2cmy3Dz4yAYc7MgLG0kAheAJz7Th51CtlbF7HxydL1rRWQ10Mc4VAcQtbI7VDarL_HGRpBGwliLn4UHILbJ2kfxutVqF8Jqn1sE9n96DKCH2lCeY7vgXq1KEe5SzTs7vDsVl7m3BRVOlCCq8p8RYrG2KPhEo3h6WIR_GIjdmhmktS9U_exejin0l8ljZJpaWQoTcMBR_LvLqQjoruVSHmgncZ9F_SHDREVdFP3b8JVL4b9Eqv9KpNjnY3GIyyhPa31ifMft9MKoWd9-0DJMlYIAXv7pEd1CDqUUKHbrLnAgVtLPMNKWpSSa8dSBjnRWgaBL3_nDPEaGWyVBXfovbcfJcM5_m5TYTS5gtrBK3EEtdC9NM-_Q3rtsLULS5hBBrfYVxOPRF0YhjGyAtLsRves6RoRN047XQRh4PQwIYZ86FWDh3oJZ1Bm0LEE-jCTKCI-Q7WcXWgy4nN5NYFUMvzwfX_HE0nmknjWlCGPy20nEN5UjCvxt1mFrGxf249vijUJV_ICbqnT4DmXjot9WgKsBA1mAoFgLGK9rUPafZ2brlzzQR0Jwjdicqo2fnfvGqtN8Ym6UVCv-TGO8yLyhmF2sj9KvPrEssE9qHTrab_2rDuvPE4VKuKur-BylTjK6SK_edOrLmj-CRWlGcFfRDz-taJ3ESoGpAuC_kq
+
+\subsection{MRI data}
+
+The MRI data in the OASIS dataset is in NIfTI format. To make use of this data format I used the \textit{NiBabel} Python package to read each file and convert the volume data into a 3D \textit{NumPy} matrix. My initial method was to attempt AD classification on the same depth transverse slice from each subjects MRI volume. I decided on a depth of $\frac{1}{3}$ of the volume depth as this was close to the centre for each patient. The transverse slice was chosen with the idea that it looked to be visually the simplest plane which may have eased generation with the GAN method. \\
+
+To use the GPU training method detailed in Section \ref{gpu_training} the MRI slices were organised as in Listing \ref{datadir_structure} so they can be pulled from the directory during training. Each training, validation and testing set have their own directory and then the positive and negative samples in each have their own subdirectory. MRI slices were written as grey scale PNG files.
+
+\begin{lstlisting}[float={t},language=Bash, caption={Required data directory structure for Keras \textit{image\_dataset\_from\_directory}}, label={datadir_structure}]
+train_data/
+..0/
+....img_01.png
+....img_02.png
+..1/
+....img_01.png
+....img_02.png
+val_data/
+..
+test_data/
+..
+\end{lstlisting}
+% https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/image_dataset_from_directory\
+	
+% --------------------
+	
+\section{Initial Alzheimer's disease detection}
+\label{initial_ad_detection}
+
+My initial attempts at Alzheimer's disease detection in MRI volumes was to simply take a single slice from the centre of each subject to create a set of images for CNN classification. When fitting of a simple CNN model to a training set, it became clear that this method would not work. As training progressed the training loss converged towards $1.00$ and the accuracy of the model evaluated on a validation set hovered around $0.50$ and as this is a binary classification problem this is no better than guessing, which suggests overfitting. 
+
+Ultimately this method was flawed due to the decisions made in the MRI slicing. As discussed in Section \ref{ad_in_mris}, AD is a disease which affects certain regions of the brain and my initial naive slicing method did not account for this. \\
+
+To classify AD from CN with a CNN a better method for MRI slicing would take coronal slices across the MTL. The issue here is that each patient brain is positioned differently in the MRI volume; simply deciding on a slice depth will not work for all subjects. To accurately select slices in the same region for each subject will require MRI-processing steps, particularly normalisation so each subjects brain fits a template where we know the location of the MTL.
+	
+% --------------------
+	
+\section{Pre-processing}
+
+Pre-processing was required as a necessary step in gathering data to train the CNN model for AD classification.
+
+\subsection{Data pre-processing pipeline}
+
+To ensure accurate slicing of MRI volumes for use with the CNN method described in the previous Section there are some key pre-processing steps that must be applied:
+
+\begin{enumerate}
+    \item Volumes must be re-sampled to 1x1x1mm voxels. This not only allows for more accurate results when applying other pre-processing steps, but it makes it easier to make measurements within the volume.
+    \item The brain should be extracted from the volume as non-brain regions do not aid detection and may only lead to confusion in the model. Doing so will also simplify the content in slices which should ease GAN training.
+    \item The key step for this method to work is normalisation. To extract coronal slices from the MTL from each subject the MTL needs to be in the same location for each subject. If each subject is normalised to a template, then finding the depth at which a coronal slice contains the MTL will allow automated extraction of the same region from each subject in the dataset.
+\end{enumerate}
+
+% possibly include NiPype pipeline visualisation
+
+\subsubsection{Re-sampling}
+
+Re-sampling is easily achievable with FreeSurfer's \textit{MRIConvert} function. Listing \ref{mri_convert} shows the initialisation of the MRIConvert object in NiPype which will decompress the $tar.gz$ NIfTI file, re-sample MRI volume to 1x1x1mm voxels, reshape to 256x256x256 and reorient axis orientation to align with target template. Re-sampling and reshaping is achieved by setting the $cw256$ argument to true.
+
+\begin{lstlisting}[float={t},language=Python, caption={FreeSurfer MRIConvert arguments for decompressing NIfTI volume and re-sampling to 1x1x1mm voxels, reshaping to 256x256x256 and reorienting axis orientation to align with target template.}, label={mri_convert}]
+MRIConvert(
+    in_file=in_path,
+    out_file=out_path,
+    in_type="niigz",
+    out_type="nii",
+    cw256=True,
+    in_orientation="RSA",
+    out_orientation="SAR",
+    slice_reverse=True,
+)
+\end{lstlisting}
+
+\subsubsection{Brain extraction and normalisation}
+
+Brain extraction was performed using FSL brain extraction tool (BET) \textbf{[https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/BET]}. This method produces results in under a minute which is fast enough to process a training dataset in a reasonable amount of time. To get good results BET requires optimisation of a threshold parameter to know how much of the image to remove. Figure \ref{mri_bet} shows the original input volume (transverse slice) and the output from BET with a threshold value of $0.30$. There are still some regions of skull in the volume and the other planes show regions of non-brain tissue and other unwanted regions. Good results with BET are possible but I was unable to find a value which worked for all volumes across the OASIS dataset. This meant brain extraction across the dataset could not be automated and manual thresholding per-image would have been too time consuming, so I concluded this method was not acceptable for the needs of this project.
+
+Normalisation was attempted with SPMs Normalise12 function, warping volumes to fit a template. Output results were good, but processing took on the order of 1 hour on my hardware. With a dataset of hundreds of volumes this method simply would have taken too long to process so this method was not a viable option. Similar tests were ran with the ANTs normalisation package and had similar results.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.2\linewidth]{figures/brainextraction_original.png}
+    \includegraphics[width=0.2\linewidth]{figures/brainextraction_extracted_fail.png}
+    \caption{Original volume (left) and failed brain extraction output from BET (right).}
+    \label{mri_bet}
+\end{figure}
+
+\subsection{Runtime-accuracy trade-off}
+
+Whilst studying and applying MRI pre-processing functions to the OASIS dataset, it became clear to me that neuroimaging pre-processing software suffers from a runtime-accuracy trade-off. There are a large number of neuroimaging pre-processing software packages available and all have their uses, but it seemed to me that either I had to chose between an accurate high-quality results and wait days for it to process such as ANTs normalisation, or use a faster deep learning based approach which required meticulous manual hyper-parameter tuning like BET. \\
+
+With sub-optimal results I decided to proceed with the remainder of the project using the OASIS pre-processed volumes provided with the dataset. The pre-processing steps applied to these volumes were similar to my approach which meant the method for AD classification could stay the same. The pre-processing steps applied to the MRI volumes used throughout the remainder of the project were:
+
+\begin{itemize}
+    \item Re-sampling to 1x1x1mm voxels
+    \item Brain extraction
+    \item Normalisation
+    \item Segmentation of white and grey matter and CSF
+\end{itemize}
+
+Figure \ref{segmented_samples} shows sagital, coronal and transverse slices of pre-processed sample volume from OASIS dataset which I shall be using for the remainder of the project. The additional step of white and grey matter and CSF segmentation should help classification as it can better distinguish MTL atrophy. 
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.6\linewidth]{figures/segmented_samples.png}
+    \caption{Transverse (left), coronal (middle) and sagital (right) slices of pre-processed sample volume from OASIS dataset.}
+    \label{segmented_samples}
+\end{figure}
+
+% --------------------
+	
+\section{Alzheimer's disease detection}
+\label{ad_detection_implemetation}
+
+\subsection{CNN architecture}
+
+Figure \ref{cnn_architecture} shows the described architecture diagram for the CNN model used for Alzheimer's disease detection in (coronal) MRI slices. It is based off the VGG16 architecture with blocks of convolutional layers ending with max-pooling to reduce the size of feature maps. I made changes to network depth and filter counts due to the VGG16 architecture being designed for the larger (resolution) ImageNet dataset with 1000 classes, where my aim was binary classification of smaller MRI slices. I also added batch normalisation layers following the convolutional layers to aid regularisation knowing the model would be used with a limited amount of data. 
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=1\linewidth]{figures/cnn_architecture.png}
+    \caption{CNN model architecture.}
+    \label{cnn_architecture}
+\end{figure}
+	
+\subsection{Single-slice classification}
+	
+CNN AD classification using single slice from MTL gave poor results of around $50\%$ accuracy which - as this is a binary classification problem - means it is no better than guessing; it is a weak learner. There are a few reasons this could have been: the first being that there was not enough data and the second being that AD can simply not be detected from single slices alone. Without having access to a larger dataset I decided to explore the second option.
+	
+\subsection{Multi-slice classification}
+	
+As the MTL is not simply seen in one slice of the MTL, it makes sense to sample a range of slices across the region. Using the method described in Scheltens et al. (1992) \cite{scheltens1992atrophy} I took 6 coronal slices of the MTL by starting at the anterior pons and taking every second slice (1mm gap to increase variability between slices), from each of the subjects. When creating training, validation and testing sets I ensured the slices from the same subject remained in the same set as to not introduce train-test leakage. \\
+	
+Introduction of the additional slices resulted in the model's accuracy increasing, which I conclude being a result of having a now larger training set and a greater representation of the MTL in the data. After optimising the models hyperparameters I found the SGD optimiser with Nesterov momentum (of 0.9), an exponentially decaying learning rate and early stopping of training to perform the best on the validation data. After optimisations classification results on the hold-out test set for precision, recall and f1-score were $0.82$, $0.85$ and $0.83$ respectively. \\
+
+Figure \ref{training_loss_curve} shows the training loss and accuracy over training epochs of the optimised CNN model. It seems the model is underfitting slightly as training loss decreases slowly, however it was difficult to overcome high levels of overfitting without increasing the dropout in the model. I believe a small number of training samples for a task which requires detection of very subtle changes in the MRI volumes is to blame. Had there been more training samples the dropout rate could be lower, but overcoming this problem is the aim of this project.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/cnn_training.png}
+    \caption{Loss (left) and binary accuracy (right) of the optimised CNN model over training epochs.}
+    \label{training_loss_curve}
+\end{figure}
+
+\subsection{Transfer learning}
+
+As discussed in \ref{transfer_learning}, transfer learning is often a good method to try when dealing with a small dataset. I decided to use a VGG16 model pre-trained on the ImageNet dataset. As the ImageNet dataset has (3-channel) coloured images and the training data are (single-channel) greyscale images, this required stacking 3 copies of the MRI slices to fit the VGG architecture. \\
+	
+The transfer learning method performed worse than the CNN architecture I implemented. I believe this was due to the highly different domains between the ImageNet dataset and the MRI slices I was using for training; the pre-processed MRI slices are all very similar in nature, with only slight differences in sizes and shapes of brain structures, where the ImageNet dataset includes things wildly different such as dogs and ice cream. ImageNet is also a 1000-class classification problem and AD detection is binary so the model is likely far too complex for this application. For these reasons I decided not to proceed with transfer learning as my AD detection method.
+
+\subsection{Improved evaluation}
+
+Rather than evaluating single slices with the model to test performance, I implemented a method similar to that described in Jon Bin Bae et al. (2020) \cite{bae2020identification} show in Figure \ref{multi_slice_method}; where for each subject the same slices were taken across the MTL, then each are evaluated by the model and if more than half of the slices have a detection then the subject is evaluated as a positive (AD) sample, with the hope of increasing recall as AD may be (visually) identifiable in one slice but not another. \\
+
+The mean and standard deviation results of 5-fold cross-validation for the per-subject averaging evaluation and standard evaluation methods are shown in Table \ref{crossval_results}. As expected there was a recall increase of $0.06$, as well as a slight increase in precision, bringing the $F_1$-score to $0.87$, an increase of $0.05$ so it is clear this evaluation method is an improvement. There has also been a slight decrease in standard deviation between training folds indicating a more reliable detector (between tests).
+
+\begin{figure}[t]
+    \centering
+    \fbox{\includegraphics[width=0.95\linewidth]{figures/multi_slice_prediction.png}}
+    \caption{Method for using multiple volume coronal slices across MTL for improved AD classification.}
+    \label{multi_slice_method}
+\end{figure}
+
+% \begin{wraptable}{r}{5.5cm}
+\begin{table}[t]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        & \multicolumn{2}{|c|}{Standard} & \multicolumn{2}{|c|}{Per-Subject} \\
+        \hline 
+        Metric & $\mu$ & $\sigma$ & $\mu$ & $\sigma$ \\ [0.5ex] 
+        \hline 
+        $Accuracy$  & 0.82 & 0.0513 & 0.86 & 0.0497 \\ 
+        $Precision$ & 0.82 & 0.0718 & 0.84 & 0.0772 \\ 
+        $Recall$    & 0.85 & 0.0359 & 0.91 & 0.0444 \\ 
+        $F_1-score$ & 0.83 & 0.0454 & 0.87 & 0.0411 \\ [1ex] 
+        \hline
+    \end{tabular}
+    \caption{CNN AD classification cross-validation results}
+    \label{crossval_results}
+    % \end{wraptable} 
+\end{table}
+
+% --------------------
+	
+\section{Generation}
+
+Now that initial results of Alzheimer's disease classification with the CNN method implemented in Section \ref{ad_detection_implemetation} have been gathered the GAN method for image augmentation can be applied.
+
+\subsection{GAN implementation}
+
+To implement generative adversarial networks in TensorFlow I implemented a GAN class inheriting $Keras.Model$. The constructor for the GAN accepts a model architecture which consists of a Keras model for both the discriminator and generator networks, as well as specifications of (training) image shape, random latent vector ($z$) dimension and batch size. The $compile()$ method sets the GAN model's loss function and sets the optimiser for the individual discriminator and generator networks and sets their internal loss functions as the mean of their predictions. Custom training logic was implemented by defining $train_step()$ which trains the model on one batch $X$; a pseudo-code implementation can be seen in Listing \ref{gan_training_step}; my Python implementation of the GAN class can be seen in the $gan.py$ module. \\ 
+
+Other than the custom constructor parameters the GAN model behaves just like a normal Keras model so I can make use of functionalities like TensorBoard and early stopping without explicitly implementing then into my class. Because of this I was able to create my own custom callback to generate samples from the generator network every few epochs so I could analyse its performance during training.
+	
+\begin{lstlisting}[mathescape, float={t}, caption={Pseudo-code for a training step of the GAN model, i.e. training for one batch $X$, which consists of two main parts training the discriminator (a), then the generator (b).}, label={gan_training_step}]
+a) train discriminator $D$:
+    1. create a batch of random latent spaces $z$
+    2. predict $G(z)$ to generate images $X^*$
+    3. evaluate $D(X)$ and $D(X^*)$ to get real / fake predictions
+    4. calculate discriminator loss $J^D$ for predictions and update $\Theta^D$
+b) train generator $G$:
+    1. create a batch of random latent spaces $z$
+    2. predict $G(z)$ to generate images $X^*$
+    3. evaluate $D(X^*)$ to get real / fake predictions
+    4. calculate generator loss $J^G$ for predictions and update $\Theta^G$
+\end{lstlisting}
+		
+\subsection{Simple image generation}
+\label{section:simplegan}
+
+As discussed in Section \ref{gan_training_is_difficult}, GAN training is notoriously difficult so I thought best to experiment with the generation of a simpler dataset of lower resolution images. As is standard, I chose to train a GAN model on the MNIST dataset of 28x28 images of handwritten digits. \\
+
+To construct the GAN I need to define the discriminator and generator network architectures:
+
+\begin{itemize}
+    \item The discriminator network is effectively a feed-forward network with a layer of $784$ input nodes ($28x28$ flattened), a few fully-connected layers and single output node with a $sigmoid$ activation function performing binary classification. Following common advice the hidden layers use the $LeakyReLU$ activation function as apposed to $ReLU$ as it can help minimise vanishing gradients.
+    \item The generator network has an input layer of nodes the size of the random latent vector $z$. It also has fully-connected layers with $LeakyReLU$ activation, but with an output layer of $784$ nodes (followed by a reshape to $28x28$). Common advice also suggests a $tanh$ activation function for the output layer.
+\end{itemize}
+
+Training of both networks uses the $Adam$ optimiser. Figure \ref{mnist_gen_samples} shows samples from the GAN's generator network after 100 training epochs. The resulting images would not look out of place in a sample of real MNIST images with each of the classes being represented given enough samples.
+
+\begin{figure}[t]
+    \label{mnist_gen_samples}
+    \centering
+    \includegraphics[width=0.15\linewidth]{figures/sample_5.jpg}
+    \includegraphics[width=0.15\linewidth]{figures/sample_8.jpg}
+    \includegraphics[width=0.15\linewidth]{figures/sample_6.jpg}
+    \caption{Sample generations from GAN trained on MNIST dataset.}
+\end{figure}
+	
+\subsection{MRI generation}
+
+The MRI slices from the OASIS dataset are a lot larger in resolution than the MNIST images used to train the GAN in Section \ref{section:simplegan} (176x176), they are also more complex than simple white digits on a black background, so a more complex GAN model will be needed to generate such images. \\
+
+As the GAN model was implemented to take the discriminator and generator network architectures in the constructor it makes it easy to add complexity to the model. Rather than simple fully-connected layers in the networks we can make use of convolutional layers to learn complex feature maps and better discriminate (and generate) images. This type of model is a deep convolutional generative adversarial network (DCGAN). \\
+
+For the discriminator network this means replacing the fully-connected layers with convolutional layers. The input is the 176x176 image, it is then passed through a series of convolutional layers and outputs a single binary classification. The generator network works in the opposite way; the random latent vector is input, then it passes through a series of transposed convolutional layers which increase the size of the input (rather than decrease with convolutional layers) whilst applying the kernel filters. The output of the generator is then the generated image of size 176x176. \\
+
+As the discriminator and generator networks in a GAN are designed to be adversarial optimal loss of the discriminator network is not $0.00$ as it would be with another neural networks. If the aim is to train the best generator is may seem a loss of $1.00$ is the aim, but this would mean the discriminator is not doing its job and the generator will not learn to beat it. Instead the aim is to reach a point of equilibrium where the discriminator is effectively guessing which sample is real giving a loss of $0.50$. \\
+
+Figure \ref{disc_training_loss} shows the discriminator loss during GAN training. We see loss initially starts high and begins to converge just under $0.50$ indicating the generator is learning at a similar rate to the discriminator. However as training progresses it seems the generator is unable to compete with the discriminator and the discriminators loss begins to head further towards $0.00$ suggesting the generator is generating images which the discriminator can detect as fake more often than not. \\
+
+Figure \ref{oasis_gen_real_samples} shows samples from the generator compared to some original samples. Generated images are clearly of similar nature, however there are some issues such as images being a little washed out compared to the original with black backgrounds. This aligns with what is observed in the loss curve; there are slight differences which make it possible to detect the fake samples. \\
+
+To generate samples from both AD and CN classes separate GANs are trained on each exclusive class which in turn trains two generators able to generate AD and CN MRI coronal slices.
+
+% \begin{figure}[t]
+%     \label{gan_network_archs}
+%     \centering
+%     \includegraphics[width=\linewidth]{figures/gan_network_architectures.png}
+%     \caption{GAN discriminator (top) and generator (bottom) network architectures.}
+% \end{figure}
+
+\begin{figure}[t]
+    \label{disc_training_loss}
+    \centering
+    \includegraphics[width=0.7\linewidth]{figures/discriminator_loss.png}
+    \caption{Discriminator loss throughout 100 GAN training epochs.}
+\end{figure}
+
+\begin{figure}[t]
+    \label{oasis_gen_real_samples}
+    \centering
+    \includegraphics[width=0.7\linewidth]{figures/gensamples.png}
+    \caption{GAN generated coronal slices of MTL and slices from real MRI volumes (post pre-processing).}
+\end{figure}
+	
+% --------------------
+	
+\section{Generation as augmentation}
+
+% \subsection{MNIST}
+
+%%%%%%%%%% CODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIMECODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIMECODE THIS IF YOU HAVE TIME CODE THIS IF YOU HAVE TIME
+
+% GAN augmentation application with MNIST GAN.
+
+% \begin{itemize}
+%     \item pick 2 classes
+% 	\item classify with small sample of images
+% 	\item classify with various number of generated additions
+% 	\item compare with larger amount of real data
+% \end{itemize}
+	
+% \subsection{OASIS}
+
+To analyse the performance of the GAN generator and to implement the method for generation as augmentation detailed in Frid-Adar et al.  (2018) \cite{frid2018gan} I needed to analyse the performance of the AD detector detailed in Section \ref{ad_detection_implemetation} when trained using GAN generated samples and testing on a hold-out testing set of original samples. To do this I generated 400 random latent vectors and called the $predict$ function on the generator network. \\
+
+Table \ref{gen_as_aug_results} shows the classification performance of Alzheimer's disease detector when trained on original training samples, original samples with 400 generated samples and generated samples alone, evaluated on a hold-out test set of original samples. Initial results seem to indicate that the addition of the generated samples to the training set do not aid in testing performance of the AD classifier.
+
+% \begin{wraptable}{r}{5.5cm}
+\begin{table}[t]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        & \multicolumn{2}{|c|}{Standard} & \multicolumn{2}{|c|}{Per-Subject} \\
+        \hline 
+        Training Data & $Accuracy$ & $Precision$ & $Recall$ & $F_1$ \\ [0.5ex] 
+        \hline 
+        $Oringinal$            & 0.82 & 0.82 & 0.85 & 0.83 \\ 
+        $Original + Generated$ & 0.81 & 0.88 & 0.73 & 0.79 \\ 
+        $Generated$            & 0.85 & 0.56 & 0.75 & 0.62 \\ [1ex] 
+        \hline
+    \end{tabular}
+    \caption{Classification performance of Alzheimer's disease detector when trained on original training samples, original samples with 400 generated samples and generated samples alone, evaluated on a hold-out test set of original samples.}
+    \label{gen_as_aug_results}
+    % \end{wraptable} 
+\end{table}
+
+% -----------------------------------------------------------------------------
+
+\chapter{Critical Evaluation}
+\label{chap:critical_evaluation}
+
+% --------------------
+
+\section{Introduction}
+
+In this chapter I evaluate my method and findings, discussing the main steps of implementation described in Chapter \ref{chap:method}. I also compare my work to the previous research discussed in Chapter \ref{chap:context}, discuss limitations that changed how I went about the project and detail future work which could be done on the topic.
+
+% --------------------
+
+\section{Pre-processing}
+	
+After initial failed AD classification attempts it was clear that training data needed pre-processing before use with my neural network models. As discussed in section \textbf{???} and shown paper \textbf{???} the MTL is most visibly effected by AD, so normalisation of MRI volumes was required to ensure brain regions aligned between subjects to allow accurate slicing. \\
+
+Initial handling of NIfTI data and alignment of axis allowed me to handle MRI data as arrays to realign axis, but suffered from either runtime or accuracy issues when it came to normalisation and brain extraction. Normalisation of full OASIS dataset with SPM would have taken weeks to process and there's no guarantee results would have been acceptable once completed. Brain extraction with BET processed faster, but required careful optimisation of the threshold parameter per-subject which would have been too time consuming for the entire dataset and not usable in a real system. Because of these issues I decided to use provided pre-processed MRI volumes in the OASIS dataset which had been brain-extracted, normalised to the same template and been grey and white matter and CSF segmented. \\
+
+AD classification of the MRI volumes only became possible after training with the pre-processed volumes, showing the need for and merit of this method. My choice to use pre-provided volumes was vital as unfamiliarity with the neuroimaging software meant a lot of development time was spent on the subject and without it I could have not progressed to the main tasks of AD classification and MRI slice generation.
+
+% --------------------
+
+\section{Alzheimer's disease detection}	
+
+Method of slicing across the MTL in pre-processed MRI worked well, resulting in a strong classifier able to detect AD. This was a necessary additional step as both classifiers trained on non-processed and single MTL slices were not able to perform better than guessing. \\
+
+CNN model was able to discern subtle differences in MRI slices indicating presence of AD, something which requires medical expertise. Model originally overfit but I made good use of regularisation techniques such as dropout and batch normalisation to minimise this despite having such a small dataset. Per-subject averaging of predictions across the MTL of each subject greatly increased the recall when evaluated on the hold-out test set. Using cross-validation I gained a better idea of the variability between training runs and final mean classification results after all optimisations gave an $F_1$ score of 0.87. \\
+
+I experimented with a transfer learning model using the VGG16 architecture but I concluded that this over-complicated the model and did not give beneficial results due to differences in the resolution, size and nature of the ImageNet dataset it was trained on. Further exploration of other network architectures and the use of less layers of the model could have given better results but ultimately I think training a custom CNN model from scratch was the right decision, giving me greater control and increased classification performance. \\
+
+As discussed in Section \ref{sens_spec_in_medicine}, if a machine learning method is to be used in the medical field it must reach a high classification performance - usually around 0.95 for metrics such as $F_1$. My Alzheimer's disease detector falls just short of this high threshold but I put this down to lack of training data over the method itself and this the aim of the further steps in this project is to resolve this issue.
+
+% --------------------
+
+\section{Generation}
+
+\subsection{GAN implementation}
+
+I implemented generative adversarial networks in TensorFlow (Keras) by defining it as a Keras $Model$, taking the discriminator and generator model architectures as parameters in the constructor. Other than the custom constructor parameters the GAN model behaves just like a normal Keras model which makes further development of GAN models a lot easier. This implementation works very well and allowed me to test many architectures with ease. The class is also easily adaptable to other architectures such as a Wasserstein GAN, or conditional GAN should I implement these in the future.
+
+\subsection{GAN training}
+
+As discussed in Section \ref{gan_training_is_difficult}, GAN training is difficult. I encountered many of the common issues of non-convergence and image artifacts, but managed to overcome a lot of them thanks to regularisation via batch normalisation and the use of LeakyReLU activation functions to minimise vanishing gradients. In the end generated images were easily recognisable despite slight differences such as a less dark background. This specific issue could even be addressed with some simple post processing via manual pixel thresholding. \\
+
+% --------------------
+				
+\section{Generation as augmentation}
+
+To analyse the performance of the GAN generator and to implement the method for generation as augmentation detailed in Frid-Adar et al. (2018) \cite{frid2018gan} I needed analysed performance of the AD detector detailed in Section \ref{ad_detection_implemetation} when trained using GAN generated samples and testing on a hold-out testing set of original samples. 
+
+I attempted to recreate the work of Frid et al. \cite{frid2018gan}, applying their method of GAN based image augmentation for improved CNN classification to the domain of AD detection in MRI volumes. I was successfully able to create a working AD detector from MRI volumes; I was also able to generate MRI slices, but it became clear that the complexity of the MRI data was far greater than the images used to detect liver lesions. This added complexity requires a more complex GAN model and likely more data. I think with more work on the GAN model this method could work for AD detection, but it may also be the case that it needs so much data to generate clear enough images that the CNN models performance would have been good enough anyway. \\
+
+Future work could help but it may be a case of waiting for other GAN research to develop as have neural networks so far, e.g. dropout, batch norm, momentum etc. GANs are still difficult to train, but its likely this will change in the future and this method could be explored again. 
+
+
+% --------------------
+				
+\section{Previous work}
+
+The main idea of this thesis is based on the work of In Frid-Adar et al. (2018) \cite{frid2018gan}, where GAN-based image augmentation was used for the improved classification performance of liver lesions in CT scans and compared it to traditional augmentation techniques. I have successfully re-implemented the method for the domain of Alzheimer's disease detection. I was also able to generate MRI slices, but it became clear that the complexity of the MRI data was far greater than the images used to detect liver lesions. This added complexity requires a more complex GAN model and likely more data. I think with more work on the GAN model this method could work for AD detection, but it may also be the case that it needs so much data to generate clear enough images that the CNN models performance would have been good enough anyway.
+
+% --------------------
+
+\section{Limitations}
+
+This section details some of the limitations I faced during the project.
+
+\subsection{Data}
+
+Although it was the aim of the project to overcome this, I was limited by the lack of medical data available. Not having access to larger amounts of data meant that I was unable to test at what point both a CNN and GAN have enough data to perform well. Ideally I would have trained both to the point where results were (medically) acceptable and then progressively remove samples, replacing them with generated samples to compare results. \\
+
+The size of available datasets was not the only issue, but the nature of the datasets I could gain access to also limited my approach with the project. It is clear that the method detailed in In Frid-Adar et al. (2018) \cite{frid2018gan} works better for images which are less visually complex, but most medical imaging is complex such large DICOM X-rays and volumetric MRI scans. Liver lesion CT scans are relatively simple and low in resolution and a dataset similar to this in complexity would have helped further test the method.
+
+\subsection{Alzheimer's detection}
+
+Wanting to apply the method of GAN-based augmentation to MRI volumes I searched for available datasets which I thought may work. Finding some datasets of MRIs of patients with Alzheimer's disease I thought this would be a good application domain. \\
+
+Before starting the project I did not understand the difficult nature of the problem. This meant that the scope of the GAN-generation portion of the project had to be reduced greatly as I needed to spend time on pre-processing and in-depth optimisation of the CNN classification method. \\
+
+Although disappointing that the GAN method did not progress past the DCGAN architecture I have learnt far more about how to deal with machine learning problems that do not simply work from the start. Using pre-processing and regularisation techniques I managed to build a strong AD classifier despite only having limited amount of training data.
+
+\subsection{Computational and memory cost}
+
+Training neural networks is computationally complex and require specialist hardware. I trained my models using an NVidia RTX2060S with 8GB of VRAM. This allowed me to train quite large models, but with more hardware I could have experimented with more complex methods, or simply run tests faster and gather additional results.
+
+\subsection{GAN interpretability}
+
+An issue with GAN training is the difficulty of interpreting the 'realness' of generated images. Trusting the discriminator alone is often not enough as the network may simply be performing badly. One method I would try in the future is to find a medical professional and use them as a real-life discriminator; giving them samples from the real dataset and generator. However, due to the pre-processing methods (segmentation) the MRI images likely look very different to the images they would used to analysing.
+
+\subsection{Real-world application}
+
+Intractability of neural networks is a common criticism when used in the real world. This is especially an issue in the medical field as decisions need to be understood to ensure they are of best interest to the patient. If such a model for AD detection using neural networks was to be used in the real world the decision making process of the networks would need to be explainable for both doctors and patients to feel comfortable with its decisions.
+
+% --------------------
+
+\section{Future work}
+
+These improvements could improve the generation of MRI slices which would help achieve the goal of generating samples from a small dataset to help improve the classification performance of AD detection.
+
+\subsection{GAN architectures}
+
+There are various GAN architectures which I could improve the performance of the GAN generation:
+
+\begin{itemize}
+    \item A conditional GAN could be used to train a single GAN to generate either AD or CN MRI slices which could improve class-separability between generated samples.
+    \item Loss in my current GAN implementation currently converges towards 0.50 for an optimal solution as the discriminator should perform no better than guessing which input is real or fake. Wasserstein loss, or the Earth mover metric, aims to better define a loss function for GAN training. A Wasserstein GAN (WGAN) could be implemented which may aid training and produce clearer images.
+    \item Progressive growing GANs (PGGAN) train the GAN networks with incrementally increasing image sizes throughout training. The idea being that smaller images are easier to train with GANs, so training a small GAN initially then increasing the size of training images (and generations) as training progresses improves overall image quality. This method has been used to produce high-resolution like-like images such as the faces of deep-fakes.
+\end{itemize}
+
+\subsection{Unsupervised pre-training via GAN generation}
+
+Unsupervised pre-training via randomly labelled generated MRI slices. The idea being that the CNN can have initial weights updated to learn what the data should look like before learning to detect AD. Then when it comes to detecting AD, it is able to focus training on discerning AD from CN and not waste time making sense of the images.
+
+\subsection{Other applications}
+
+The method for GAN-based augmentation for improved image classification could be applied to other applications such as brain tumours in MRIs, ailments in chest X-rays or other non-medical fields. Using the PGGAN method this could be applied far more complex image domains. 
+
+% --------------------
+
+% \section{Objectives}
+
+%  \begin{enumerate}
+%     \setlength\itemsep{0em}
+%     \item Develop a system for Alzheimer's disease detection in MRI volumes.
+%     \item Training should be performed on slices of the MTL from training MRI volumes. 
+%     \item Implement and train a GAN, capable of generating MRI slices from training volumes.
+%     \item Use generated slices to provide augmented training samples for AD detection training.
+%     \item The resulting AD detector should outperform that which was solely trained on original training samples.
+%     \item An increasing number of generated samples should be added to the training data and the point at which this no longer increases detection performance should be found, i.e. find the optimal number of additional samples to generate.
+%     \item Detection performance when trained solely on generated samples should near that of the detection performance when trained solely on original training samples.
+%     \item Detection performance on testing samples should be near that of detection performance on training samples.
+% \end{enumerate}
+
+% -----------------------------------------------------------------------------
+
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+
+% \section{Objectives}
+
+My objectives of the project were:
+ 
+ \begin{enumerate}
+    \setlength\itemsep{0em}
+    \item Develop a system for Alzheimer's disease detection in MRI volumes.
+    \item Training should be performed on slices of the MTL from training MRI volumes. 
+    \item Implement and train a GAN, capable of generating MRI slices from training volumes.
+    \item Use generated slices to provide augmented training samples for AD detection training.
+    \item The resulting AD detector should outperform that which was solely trained on original training samples.
+    \item An increasing number of generated samples should be added to the training data and the point at which this no longer increases detection performance should be found, i.e. find the optimal number of additional samples to generate.
+    \item Detection performance when trained solely on generated samples should near that of the detection performance when trained solely on original training samples.
+    \item Detection performance on testing samples should be near that of detection performance on training samples.
+\end{enumerate}
+
+I successfully developed a system for AD detection in MRI volumes using a CNN model, achieving a precision, recall and F1-score of 0.82, 0.85 and 0.83 respectively. I developed methods to pre-process and slice MRI volumes across the MTL suitable for model training. \\
+
+I developed a GAN class capable of producing full-resolution recognisable MRI slices with little distortion. I was able to use the generated MRI slices to train a CNN AD classifier and achieve an F1 score of 0.62 indicating there is some distinguish-ability between the two generated classes (AD and CN). Unfortunately adding the additional samples to the training data did not result in better performance than the training data alone. This is likely down to the GAN not having learnt to distinguish classes well enough. There could also be some mode collapse occurring which would result in not many (different) samples being generated. \\
+
+However, the AD classification method I developed works very well without the additional generated samples. There is likely some underfitting occurring which I attribute to a small training set, but an F1-score of 0.83 is a strong classifier. However for the medical field this performance is not high enough for real-world use. \\
+
+I attempted to recreate the work of Frid et al. \cite{frid2018gan}, applying their method of GAN based image augmentation for improved CNN classification to the domain of AD detection in MRI volumes. I was successfully able to create a working AD detector from MRI volumes; I was also able to generate MRI slices, but it became clear that the complexity of the MRI data was far greater than the images used to detect liver lesions. This added complexity requires a more complex GAN model and likely more data. I think with more work on the GAN model this method could work for AD detection, but it may also be the case that it needs so much data to generate clear enough images that the CNN models performance would have been good enough anyway. \\
+
+Future work could help but it may be a case of waiting for other GAN research to develop as have neural networks so far, e.g. dropout, batch norm, momentum etc. GANs are still difficult to train, but its likely this will change in the future and this method could be explored again. \\
+
+In summary my main contributions for this project were:
+
+\begin{itemize}
+\item Pre-processing of MRI volumes with standard neuroimaging solutions.
+\item CNN method for Alzheimer's disease detection from pre-processed MRI volumes.
+\item Implementation of Generative Adversarial Networks in TensorFlow (Keras).
+\item Exploration of GAN generation of MRI slices as an augmentation technique for improved Alzheimer's disease detection with limited data.
+\end{itemize}
+
+% relate to existing work
+% how results achieve goals
+%  i.e. contribution summary
+%  how I improved upon existing work
+
+
+% =============================================================================
+
+\backmatter
+
+\nocite{*}
+
+\printbibliography
+
+% -----------------------------------------------------------------------------
+
+% \chapter*{Ethics Review}
+% \label{chap:ethics_review}
+
+% \begin{itemize}
+% \item datasets used
+% \item privacy agreements
+% \end{itemize}
+
+% % -----------------------------------------------------------------------------
+
+% \appendix
+
+% \chapter{Repository Structure}
+% \label{appx:repository_structure}
+
+% \begin{itemize}
+% \item modules
+% \item notebooks
+% \item resources
+% \item outputs
+% \end{itemize}
+
+% % -----------------------------------------------------------------------------
+
+% \chapter{Development Containers}
+% \label{appx:development_containers}
+
+% \begin{itemize}
+% \item tf-gpu
+% \item neurodocker
+% \end{itemize}
+
+% % -----------------------------------------------------------------------------
+
+% \chapter{Execution Instructions}
+% \label{appx:execution_instructions}
+
+% \begin{itemize}
+% \item execution of application
+% \item notebooks with data handling and pre-processing
+% \end{itemize}
+
+% =============================================================================
+
+\end{document}
